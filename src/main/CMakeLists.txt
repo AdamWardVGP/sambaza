@@ -38,9 +38,9 @@ pkg_check_modules(GST REQUIRED #gstreamer-full-1.0
 add_library(sambaza SHARED
         h265gstreamer.c)
 
-message(WARNING "GST_LIBRARIES: ${GST_LIBRARIES}")
-message(WARNING "GST_LINK_LIBRARIES: ${GST_LINK_LIBRARIES}")
-message(FATAL_ERROR "GST_INCLUDE_DIRS: ${GST_INCLUDE_DIRS}")
+# message(WARNING "GST_LIBRARIES: ${GST_LIBRARIES}")
+# message(WARNING "GST_LINK_LIBRARIES: ${GST_LINK_LIBRARIES}")
+# message(FATAL_ERROR "GST_INCLUDE_DIRS: ${GST_INCLUDE_DIRS}")
 
 target_include_directories(sambaza SYSTEM PRIVATE
         ${JNI_INCLUDE_DIRS}

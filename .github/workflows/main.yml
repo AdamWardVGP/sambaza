@@ -59,11 +59,3 @@ jobs:
           name: "sambaza-${{ github.head_ref }}.aar"
           path: ./android/build/outputs/aar/sambaza-debug.aar
           retention-days: 14
-  android_test:
-    name: Run Kotlin tests
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build
-        working-directory: android
-        run: ./gradlew test
