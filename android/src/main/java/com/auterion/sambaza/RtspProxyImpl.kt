@@ -14,18 +14,18 @@ abstract class RtspProxyImpl(port: Int = 0) : RtspProxy, CoroutineScope {
     private var videoStreamFlowCollectJob: Job? = null
 
     init {
-        println("Loading libsambaza.so")
-        System.loadLibrary("sambaza")
+//        println("Loading libsambaza.so")
+//        System.loadLibrary("sambaza")
     }
 
     protected val skywayServerHandle: Long = JniApi.createRtspServer(port)
     private val streams: MutableMap<Int, StreamInfo> = Collections.synchronizedMap(HashMap())
 
     init {
-        launch {
-            println("Running glib main loop")
-            JniApi.runMainLoop()
-        }
+//        launch {
+//            println("Running glib main loop")
+//            JniApi.runMainLoop()
+//        }
     }
 
     fun setVideoStreamFlow(videoStreamFlow: Flow<Triple<Int, String, String>>) {

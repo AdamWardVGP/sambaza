@@ -5,11 +5,11 @@ internal class JniApi {
         private val handles: Long
 
         init {
-            handles = initNative()
-
-            if (handles == 0.toLong()) {
-                throw RuntimeException("Gstreamer initialization failed!")
-            }
+//            handles = initNative()
+//
+//            if (handles == 0.toLong()) {
+//                throw RuntimeException("Gstreamer initialization failed!")
+//            }
         }
 
         private external fun initNative(): Long
