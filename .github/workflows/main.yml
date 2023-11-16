@@ -3,33 +3,6 @@ name: Build and Test
 on: [push]
 
 jobs:
-  ubuntu:
-    name: libsambaza.so (ubuntu)
-    runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: src
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        id: cache
-        with:
-          path: src/build/dependencies/install
-          key: ${{ github.job }}-ubuntu20-${{ hashFiles('./src/dependencies/**') }}
-      - name: install build tools
-        run: |
-            sudo pip install meson
-            sudo apt-get update && sudo apt-get install -y ninja-build
-      - name: build and install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          cmake -DCMAKE_PREFIX_PATH=${{ github.workspace }}/src/build/dependencies/install -DCMAKE_INSTALL_PREFIX=build/dependencies/install -Bbuild/dependencies -Sdependencies
-          cmake --build build/dependencies
-      - name: build main project
-        run: |
-          cmake -DCMAKE_PREFIX_PATH=${{ github.workspace }}/src/build/dependencies/install -Bbuild/main -Smain
-          cmake --build build/main
-
   android-c:
     name: libsambaza.so (${{ matrix.name }})
     runs-on: ubuntu-22.04
@@ -81,7 +54,6 @@ jobs:
       - name: build
         run: ./gradlew assembleDebug
       - name: save artifact
-        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v3
         with:
           name: "sambaza-${{ github.head_ref }}.aar"
