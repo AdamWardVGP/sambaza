@@ -321,7 +321,7 @@ gst_native_init (JNIEnv * env, jobject thiz)
   GST_DEBUG_CATEGORY_INIT (debug_category, "h265gstreamer", 0,
       "Android Gstreamer");
   gst_debug_set_threshold_for_name ("h265gstreamer", GST_LEVEL_DEBUG);
-  GST_DEBUG ("Created CustomData at %p", data);
+  GST_DEBUG ("Created CustomData at %p", (void *) data);
   data->app = (*env)->NewGlobalRef (env, thiz);
   GST_DEBUG ("Created GlobalRef for app object at %p", data->app);
   pthread_create (&gst_app_thread, NULL, &app_function, data);
