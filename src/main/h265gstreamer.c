@@ -68,7 +68,7 @@ attach_current_thread (void)
   JNIEnv *env;
   JavaVMAttachArgs args;
 
-  GST_DEBUG ("Attaching thread %p", g_thread_self ());
+  GST_DEBUG ("Attaching thread %p", (void *)g_thread_self ());
   args.version = JNI_VERSION_1_4;
   args.name = NULL;
   args.group = NULL;
@@ -85,7 +85,9 @@ attach_current_thread (void)
 static void
 detach_current_thread (void *env)
 {
-  GST_DEBUG ("Detaching thread %p", g_thread_self ());
+    (void)env; //prevent compiler error on unused param. This method as a whole is passed into
+    //pthread_key_create so perhaps it's used internally?
+  GST_DEBUG ("Detaching thread %p", (void *)g_thread_self ());
   (*java_vm)->DetachCurrentThread (java_vm);
 }
 
@@ -122,6 +124,8 @@ set_ui_message (const gchar * message, CustomData * data)
 static void
 error_cb (GstBus * bus, GstMessage * msg, CustomData * data)
 {
+    (void)bus;
+
   GError *err;
   gchar *debug_info;
   gchar *message_string;
@@ -141,6 +145,8 @@ error_cb (GstBus * bus, GstMessage * msg, CustomData * data)
 static void
 state_changed_cb (GstBus * bus, GstMessage * msg, CustomData * data)
 {
+    (void)bus;
+
   GstState old_state, new_state, pending_state;
   gst_message_parse_state_changed (msg, &old_state, &new_state, &pending_state);
   /* Only pay attention to messages coming from the pipeline, not its children */
@@ -161,7 +167,7 @@ check_initialization_complete (CustomData * data)
   if (!data->initialized && data->native_window && data->main_loop) {
     GST_DEBUG
         ("Initialization complete, notifying application. native_window:%p main_loop:%p",
-        data->native_window, data->main_loop);
+         (void *) data->native_window, (void *) data->main_loop);
 
     /* The main loop is running and we received a native window, inform the sink about it */
     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->video_sink),
@@ -180,13 +186,11 @@ check_initialization_complete (CustomData * data)
 static void *
 app_function (void *userdata)
 {
-  JavaVMAttachArgs args;
   GstBus *bus;
   CustomData *data = (CustomData *) userdata;
   GSource *bus_source;
-  GError *error = NULL;
 
-  GST_DEBUG ("Creating pipeline in CustomData at %p", data);
+  GST_DEBUG ("Creating pipeline in CustomData at %p", (void *) data);
 
   /* Create our own GLib Main Context and make it the default one */
   data->context = g_main_context_new ();
@@ -253,7 +257,7 @@ app_function (void *userdata)
   gst_object_unref (bus);
 
   /* Create a GLib Main Loop and set it to run */
-  GST_DEBUG ("Entering main loop... (CustomData:%p)", data);
+  GST_DEBUG ("Entering main loop... (CustomData:%p)", (void *) data);
   data->main_loop = g_main_loop_new (data->context, FALSE);
   check_initialization_complete (data);
   g_main_loop_run (data->main_loop);
@@ -336,7 +340,7 @@ gst_native_finalize (JNIEnv * env, jobject thiz)
   pthread_join (gst_app_thread, NULL);
   GST_DEBUG ("Deleting GlobalRef for app object at %p", data->app);
   (*env)->DeleteGlobalRef (env, data->app);
-  GST_DEBUG ("Freeing CustomData at %p", data);
+  GST_DEBUG ("Freeing CustomData at %p", (void *) data);
   g_free (data);
   SET_CUSTOM_DATA (env, thiz, custom_data_field_id, NULL);
   GST_DEBUG ("Done finalizing");
@@ -372,21 +376,19 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
   if (!data)
     return;
   ANativeWindow *new_native_window = ANativeWindow_fromSurface (env, surface);
-  GST_DEBUG ("Received surface %p (native window %p)", surface,
-      new_native_window);
+  GST_DEBUG ("Received surface %p (native window %p)", (void *) surface, (void *) new_native_window);
 
   if (data->native_window) {
     ANativeWindow_release (data->native_window);
     if (data->native_window == new_native_window) {
-      GST_DEBUG ("New native window is the same as the previous one %p",
-          data->native_window);
+      GST_DEBUG ("New native window is the same as the previous one %p", (void *) data->native_window);
       if (data->video_sink) {
         gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->video_sink));
         gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->video_sink));
       }
       return;
     } else {
-      GST_DEBUG ("Released previous native window %p", data->native_window);
+      GST_DEBUG ("Released previous native window %p", (void *)data->native_window);
       data->initialized = FALSE;
     }
   }
@@ -401,7 +403,7 @@ gst_native_surface_finalize (JNIEnv * env, jobject thiz)
   CustomData *data = GET_CUSTOM_DATA (env, thiz, custom_data_field_id);
   if (!data)
     return;
-  GST_DEBUG ("Releasing Native Window %p", data->native_window);
+  GST_DEBUG ("Releasing Native Window %p", (void *) data->native_window);
 
   if (data->video_sink) {
     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->video_sink),
@@ -496,6 +498,7 @@ jint
 JNI_OnLoad (JavaVM * vm, void *reserved)
 {
   JNIEnv *env = NULL;
+    (void)reserved;
 
   java_vm = vm;
   // in the other example the plugins are setup gst_init_static_plugins, since that's no longer autogenerated we'll register them here
