@@ -2,7 +2,6 @@ package com.auterion.sambaza
 
 internal class JniApi {
     companion object {
-        private val handles: Long
 
         init {
 //            handles = initNative()
@@ -15,7 +14,7 @@ internal class JniApi {
         private external fun initNative(): Long
 
         internal fun runMainLoop() {
-            runMainLoopNative(handles)
+            //runMainLoopNative(handles)
         }
 
         private external fun runMainLoopNative(mainLoopHandle: Long)
@@ -39,13 +38,13 @@ internal class JniApi {
         private external fun getPortNative(skywayServerHandle: Long): Int
 
         internal fun start(serverHandle: Long) {
-            startNative(serverHandle, handles)
+            //startNative(serverHandle, handles)
         }
 
         private external fun startNative(skywayServerHandle: Long, mainLoopHandle: Long)
 
         internal fun stop(serverHandle: Long) {
-            stopNative(serverHandle, handles)
+            //stopNative(serverHandle, handles)
         }
 
         private external fun stopNative(skywayServerHandle: Long, mainLoopHandle: Long)
