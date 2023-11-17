@@ -6,6 +6,8 @@ include(ExternalProject)
 
 add_subdirectory(dependencies)
 
+add_compile_options(-fPIC)
+
 list(APPEND CMAKE_ARGS
     "-DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}"
     "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}"
