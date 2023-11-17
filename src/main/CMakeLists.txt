@@ -14,6 +14,8 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 
+# I believe these modules are located in
+# Users/myuser/Libs/gstreamer-1.0-android-universal-<version>/<cpu_arch>/lib/gstreamer-1.0/pkgconfig
 #message(FATAL_ERROR "${CMAKE_PREFIX_PATH}")
 pkg_check_modules(GST REQUIRED #gstreamer-full-1.0
     gstreamer-1.0
@@ -25,6 +27,9 @@ pkg_check_modules(GST REQUIRED #gstreamer-full-1.0
     gstudp
     gstcoreelements
     gstapp
+    gstlibav
+    gstvideoconvertscale
+    gstautodetect
     gstvideoparsersbad
     gstreamer-rtsp-server-1.0
     gstreamer-rtp-1.0
