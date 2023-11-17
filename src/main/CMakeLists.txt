@@ -43,6 +43,10 @@ pkg_check_modules(GST REQUIRED #gstreamer-full-1.0
 add_library(sambaza SHARED
         h265gstreamer.c)
 
+# "resolve symbols locally within the shared object (.so) file, rather than looking for them globally."
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-Bsymbolic")
+
+# generates position independent code (PIC) for shared libraries
 target_compile_options(sambaza PRIVATE -fPIC)
 
 # message(WARNING "GST_LIBRARIES: ${GST_LIBRARIES}")
