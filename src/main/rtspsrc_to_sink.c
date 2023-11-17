@@ -4,7 +4,7 @@
 
 typedef struct _SkywayRtspSrcToSinkPrivate {
     GstElement *rtsp_source;
-    GstElement *rtph264depay;
+    GstElement *rtph265depay;
     GstElement *appsink;
     GstElement *pipeline;
     gulong pad_added_handle;
@@ -64,11 +64,11 @@ gboolean skyway_rtsp_src_to_sink_prepare(SkywayRtspSrcToSink *self, const char *
     SkywayRtspSrcToSinkPrivate *priv = skyway_rtsp_src_to_sink_get_instance_private(self);
 
     priv->rtsp_source = gst_element_factory_make("rtspsrc", NULL);
-    priv->rtph264depay = gst_element_factory_make("rtph264depay", NULL);
+    priv->rtph265depay = gst_element_factory_make("rtph265depay", NULL);
     priv->appsink = gst_element_factory_make("appsink", NULL);
     priv->pipeline = gst_pipeline_new(NULL);
 
-    if (!priv->rtsp_source || !priv->rtph264depay || !priv->appsink || !priv->pipeline) {
+    if (!priv->rtsp_source || !priv->rtph265depay || !priv->appsink || !priv->pipeline) {
         g_printerr("skyway_rtsp_src_to_sink_init: not all elements could be created\n");
         return FALSE;
     }
@@ -87,7 +87,7 @@ gboolean skyway_rtsp_src_to_sink_prepare(SkywayRtspSrcToSink *self, const char *
     priv->new_sample_handle = g_signal_connect(priv->appsink, "new-sample",
                                                G_CALLBACK(new_sample_handler), self);
 
-    gst_bin_add_many(GST_BIN(priv->pipeline), priv->rtsp_source, priv->rtph264depay,
+    gst_bin_add_many(GST_BIN(priv->pipeline), priv->rtsp_source, priv->rtph265depay,
                      priv->appsink, NULL);
 
     return TRUE;
@@ -99,13 +99,13 @@ static void pad_added_handler(__attribute__ ((unused)) GstElement *src, GstPad *
     g_print("A new pad %s is created\n", name);
     g_free(name);
 
-    if (gst_element_link(data->rtsp_source, data->rtph264depay) != TRUE) {
-        g_printerr("Elements (rtsp_source->rtph264depay) could not be linked!\n");
+    if (gst_element_link(data->rtsp_source, data->rtph265depay) != TRUE) {
+        g_printerr("Elements (rtsp_source->rtph265depay) could not be linked!\n");
         return;
     }
 
-    if (gst_element_link_many(data->rtph264depay, data->appsink, NULL) != TRUE) {
-        g_printerr("Elements (rtph264depay->appsink) could not be linked!\n");
+    if (gst_element_link_many(data->rtph265depay, data->appsink, NULL) != TRUE) {
+        g_printerr("Elements (rtph265depay->appsink) could not be linked!\n");
         return;
     }
 }
@@ -116,7 +116,7 @@ static void pad_removed_handler(__attribute__ ((unused)) GstElement *src, GstPad
     g_print("pad removed: %s\n", name);
     g_free(name);
 
-    gst_element_unlink_many(data->rtsp_source, data->rtph264depay, data->appsink, NULL);
+    gst_element_unlink_many(data->rtsp_source, data->rtph265depay, data->appsink, NULL);
 }
 
 static void
