@@ -56,7 +56,7 @@ jobs:
       - name: save artifact
         uses: actions/upload-artifact@v3
         with:
-          name: "sambaza-${{ github.head_ref }}.aar"
+          name: "sambaza.aar"
           path: ./android/build/outputs/aar/sambaza-debug.aar
           retention-days: 14
   android_test:
