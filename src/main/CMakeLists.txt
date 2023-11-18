@@ -65,6 +65,7 @@ target_include_directories(sambaza SYSTEM PRIVATE
 target_link_libraries(sambaza
         ${JNI_LIBRARIES}
         ${GST_LINK_LIBRARIES}
+        android
 )
 
 #target_link_libraries(sambaza
