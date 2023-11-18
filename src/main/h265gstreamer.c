@@ -536,7 +536,7 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
     return 0;
   }
   jclass klass = (*env)->FindClass (env,
-      "com/com/auterion/sambaza/JniBinding$Companion");
+      "com/auterion/sambaza/JniBinding$Companion");
   (*env)->RegisterNatives (env, klass, native_methods,
       G_N_ELEMENTS (native_methods));
 
