@@ -49,7 +49,6 @@ set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-Bsymbolic")
 # generates position independent code (PIC) for shared libraries
 target_compile_options(sambaza PRIVATE -fPIC)
 
-message(STATUS "---adamtest123---")
  message(STATUS "GST_LIBRARIES: ${GST_LIBRARIES}")
  message(STATUS "GST_LINK_LIBRARIES: ${GST_LINK_LIBRARIES}")
  message(STATUS "GST_INCLUDE_DIRS: ${GST_INCLUDE_DIRS}")

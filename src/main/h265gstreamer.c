@@ -18,11 +18,11 @@ GST_DEBUG_CATEGORY_STATIC (debug_category);
  * a jlong, which is always 64 bits, without warnings.
  */
 #if GLIB_SIZEOF_VOID_P == 8
-# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(*env)->GetLongField (env, thiz, fieldID)
-# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetLongField (env, thiz, fieldID, (jlong)data)
+# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(*env)->GetStaticLongField (env, thiz, fieldID)
+# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetStaticLongField (env, thiz, fieldID, (jlong)data)
 #else
-# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(jint)(*env)->GetLongField (env, thiz, fieldID)
-# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetLongField (env, thiz, fieldID, (jlong)(jint)data)
+# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(jint)(*env)->GetStaticLongField (env, thiz, fieldID)
+# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetStaticLongField (env, thiz, fieldID, (jlong)(jint)data)
 #endif
 
 //its likely we need to add these plugins
@@ -118,7 +118,7 @@ set_ui_message (const gchar * message, CustomData * data)
   JNIEnv *env = get_jni_env ();
   GST_DEBUG ("Setting message to: %s", message);
   jstring jmessage = (*env)->NewStringUTF (env, message);
-  (*env)->CallVoidMethod (env, data->app, set_message_method_id, jmessage);
+  (*env)->CallStaticVoidMethod (env, data->app, set_message_method_id, jmessage);
   if ((*env)->ExceptionCheck (env)) {
     GST_ERROR ("Failed to call Java method");
     (*env)->ExceptionClear (env);
@@ -179,7 +179,7 @@ check_initialization_complete (CustomData * data)
     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->video_sink),
         (guintptr) data->native_window);
 
-    (*env)->CallVoidMethod (env, data->app, on_gstreamer_initialized_method_id);
+    (*env)->CallStaticVoidMethod (env, data->app, on_gstreamer_initialized_method_id);
     if ((*env)->ExceptionCheck (env)) {
       GST_ERROR ("Failed to call Java method");
       (*env)->ExceptionClear (env);
@@ -306,32 +306,6 @@ app_function (void *userdata)
  */
 
 /* Static class initializer: retrieve method and field IDs */
-//JNIEXPORT jboolean JNICALL
-//Java_com_esri_flight_exampleapps_djistreamer_gstreamer_JniBinding_00024Companion_nativeClassInit(
-//        JNIEnv *env, jobject thiz) {
-//
-//}
-static jboolean
-gst_native_class_init (JNIEnv * env, jclass klass)
-{
-  custom_data_field_id =
-          (*env)->GetFieldID (env, klass, "native_custom_data", "J");
-  set_message_method_id =
-          (*env)->GetMethodID (env, klass, "setMessage", "(Ljava/lang/String;)V");
-  on_gstreamer_initialized_method_id =
-          (*env)->GetMethodID (env, klass, "onGStreamerInitialized", "()V");
-
-  if (!custom_data_field_id || !set_message_method_id
-      || !on_gstreamer_initialized_method_id) {
-    /* We emit this message through the Android log instead of the GStreamer log because the later
-     * has not been initialized yet.
-     */
-    __android_log_print (ANDROID_LOG_ERROR, "h265gstreamer",
-                         "The calling class does not implement all necessary interface methods");
-    return JNI_FALSE;
-  }
-  return JNI_TRUE;
-}
 
 /* Instruct the native code to create its internal data structure, pipeline and thread */
 static void
@@ -511,7 +485,6 @@ static JNINativeMethod native_methods[] = {
   {"nativeSurfaceInit", "(Ljava/lang/Object;)V",
       (void *) gst_native_surface_init},
   {"nativeSurfaceFinalize", "()V", (void *) gst_native_surface_finalize},
-  {"nativeClassInit", "()Z", (void *) gst_native_class_init}
 };
 
 /* Library initializer */
@@ -539,6 +512,26 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
       "com/auterion/sambaza/JniBinding$Companion");
   (*env)->RegisterNatives (env, klass, native_methods,
       G_N_ELEMENTS (native_methods));
+
+  jclass klass2 = (*env)->FindClass (env,"com/auterion/sambaza/JniBinding");
+
+  custom_data_field_id =
+            (*env)->GetStaticFieldID (env, klass2, "nativeCustomData", "J");
+
+  set_message_method_id =
+            (*env)->GetMethodID (env, klass2, "setMessage", "(Ljava/lang/String;)V");
+
+  on_gstreamer_initialized_method_id =
+            (*env)->GetMethodID (env, klass2, "onGStreamerInitialized", "()V");
+
+    if (!custom_data_field_id || !set_message_method_id
+        || !on_gstreamer_initialized_method_id) {
+        /* We emit this message through the Android log instead of the GStreamer log because the later
+         * has not been initialized yet.
+         */
+        __android_log_print (ANDROID_LOG_ERROR, "h265gstreamer",
+                             "The calling class does not implement all necessary interface methods");
+    }
 
   pthread_key_create (&current_jni_env, detach_current_thread);
 

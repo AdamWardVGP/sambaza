@@ -11,15 +11,11 @@ class JniBinding {
      */
     init {
       System.loadLibrary("sambaza")
-      nativeClassInit()
       nativeInit()
     }
 
     /** Native code will use this to keep internal state */
-    private val nativeData: Long = 0
-
-    /** Initialize native class: cache Method IDs for callbacks */
-    private external fun nativeClassInit(): Boolean
+    private val nativeCustomData: Long = 0
 
     /** Initialize native code, build pipeline, etc */
     private external fun nativeInit()
@@ -41,12 +37,14 @@ class JniBinding {
     external fun nativeSurfaceFinalize()
 
     // Called from native code. This sets the content of the TextView from the UI thread.
+    @JvmStatic
     private fun setMessage(message: String) {
       Log.v("JNIBinding", "got native msg: $message")
     }
 
     // Called from native code. Native code calls this once it has created its pipeline and
     // the main loop is running, so it is ready to accept commands.
+    @JvmStatic
     private fun onGStreamerInitialized() {
       Log.i("JNIBinding", "Gst initialized.")
     }
