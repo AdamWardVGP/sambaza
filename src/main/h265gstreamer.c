@@ -350,7 +350,7 @@ gst_native_finalize (JNIEnv * env, jobject thiz)
   (*env)->DeleteGlobalRef (env, data->app);
   GST_DEBUG ("Freeing CustomData at %p", (void *) data);
   g_free (data);
-  set_custom_data(NULL)
+  set_custom_data(NULL);
   GST_DEBUG ("Done finalizing");
 }
 
