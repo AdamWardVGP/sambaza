@@ -38,7 +38,7 @@ GST_PLUGIN_STATIC_DECLARE(autodetect);
 /* Structure to contain all our information, so we can pass it to callbacks */
 typedef struct _CustomData
 {
-  jobject app;                  /* Application instance, used to call its methods. A global reference is kept. */
+  jobject jniCompanion;                  /* JniBinding$Companion instance, used to call its methods. A global reference is kept. */
   GstElement *pipeline;         /* The running pipeline */
   GstElement *appsrc, *parser, *decoder, *converter,  *sink; /* Elements of the pipeline */
 
@@ -127,10 +127,11 @@ static void set_custom_data(const CustomData * data) {
 static void
 set_ui_message (const gchar * message, CustomData * data)
 {
-  JNIEnv *env = get_jni_env ();
+  JNIEnv *env = get_jni_env();
   GST_DEBUG ("Setting message to: %s", message);
   jstring jmessage = (*env)->NewStringUTF (env, message);
-  (*env)->CallStaticVoidMethod (env, data->app, set_message_method_id, jmessage);
+  jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
+  (*env)->CallStaticVoidMethod (env, clazz, set_message_method_id, jmessage);
   if ((*env)->ExceptionCheck (env)) {
     GST_ERROR ("Failed to call Java method");
     (*env)->ExceptionClear (env);
@@ -191,7 +192,9 @@ check_initialization_complete (CustomData * data)
     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->video_sink),
         (guintptr) data->native_window);
 
-    (*env)->CallStaticVoidMethod (env, data->app, on_gstreamer_initialized_method_id);
+    jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
+    (*env)->CallStaticVoidMethod (env, clazz, on_gstreamer_initialized_method_id);
+
     if ((*env)->ExceptionCheck (env)) {
       GST_ERROR ("Failed to call Java method");
       (*env)->ExceptionClear (env);
@@ -330,8 +333,8 @@ gst_native_init (JNIEnv * env, jobject thiz)
       "Android Gstreamer");
   gst_debug_set_threshold_for_name ("h265gstreamer", GST_LEVEL_DEBUG);
   GST_DEBUG ("Created CustomData at %p", (void *) data);
-  data->app = (*env)->NewGlobalRef (env, thiz);
-  GST_DEBUG ("Created GlobalRef for app object at %p", data->app);
+  data->jniCompanion = (*env)->NewGlobalRef (env, thiz);
+  GST_DEBUG ("Created GlobalRef for app object at %p", data->jniCompanion);
   pthread_create (&gst_app_thread, NULL, &app_function, data);
 }
 
@@ -347,8 +350,8 @@ gst_native_finalize (JNIEnv * env, jobject thiz)
   g_main_loop_quit (data->main_loop);
   GST_DEBUG ("Waiting for thread to finish...");
   pthread_join (gst_app_thread, NULL);
-  GST_DEBUG ("Deleting GlobalRef for app object at %p", data->app);
-  (*env)->DeleteGlobalRef (env, data->app);
+  GST_DEBUG ("Deleting GlobalRef for app object at %p", data->jniCompanion);
+  (*env)->DeleteGlobalRef (env, data->jniCompanion);
   GST_DEBUG ("Freeing CustomData at %p", (void *) data);
   g_free (data);
   set_custom_data(NULL);
