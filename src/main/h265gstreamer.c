@@ -127,6 +127,7 @@ static void set_custom_data(const CustomData * data) {
 static void
 set_ui_message (const gchar * message, CustomData * data)
 {
+  (void)data;
   JNIEnv *env = get_jni_env();
   GST_DEBUG ("Setting message to: %s", message);
   jstring jmessage = (*env)->NewStringUTF (env, message);
