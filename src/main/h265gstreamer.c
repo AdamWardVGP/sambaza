@@ -113,13 +113,13 @@ get_jni_env (void)
 
 static CustomData * get_custom_data() {
     JNIEnv *env = get_jni_env();
-    jclass clazz = (*env)->FindClass(env, "com/esri/flight/codelabs/hellocmake/JniBinding");
+    jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
     return GET_CUSTOM_DATA(env, clazz, custom_data_field_id);
 }
 
 static void set_custom_data(const CustomData * data) {
     JNIEnv *env = get_jni_env();
-    jclass clazz = (*env)->FindClass(env, "com/esri/flight/codelabs/hellocmake/JniBinding");
+    jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
     SET_CUSTOM_DATA(env, clazz, custom_data_field_id, data);
 }
 
