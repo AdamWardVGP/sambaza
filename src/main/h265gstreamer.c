@@ -519,10 +519,10 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
             (*env)->GetStaticFieldID (env, klass2, "nativeCustomData", "J");
 
   set_message_method_id =
-            (*env)->GetMethodID (env, klass2, "setMessage", "(Ljava/lang/String;)V");
+            (*env)->GetStaticMethodID (env, klass2, "setMessage", "(Ljava/lang/String;)V");
 
   on_gstreamer_initialized_method_id =
-            (*env)->GetMethodID (env, klass2, "onGStreamerInitialized", "()V");
+            (*env)->GetStaticMethodID (env, klass2, "onGStreamerInitialized", "()V");
 
     if (!custom_data_field_id || !set_message_method_id
         || !on_gstreamer_initialized_method_id) {
