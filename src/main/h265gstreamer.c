@@ -128,16 +128,18 @@ static void
 set_ui_message (const gchar * message, CustomData * data)
 {
   (void)data;
-  JNIEnv *env = get_jni_env();
+  (void)message;
+//Temp disable, we'll just use GST_DEBUG for now. Calls originate from C thread seem to have some issue
+//  JNIEnv *env = get_jni_env();
   GST_DEBUG ("Setting message to: %s", message);
-  jstring jmessage = (*env)->NewStringUTF (env, message);
-  jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
-  (*env)->CallStaticVoidMethod (env, clazz, set_message_method_id, jmessage);
-  if ((*env)->ExceptionCheck (env)) {
-    GST_ERROR ("Failed to call Java method");
-    (*env)->ExceptionClear (env);
-  }
-  (*env)->DeleteLocalRef (env, jmessage);
+//  jstring jmessage = (*env)->NewStringUTF (env, message);
+//  jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
+//  (*env)->CallStaticVoidMethod (env, clazz, set_message_method_id, jmessage);
+//  if ((*env)->ExceptionCheck (env)) {
+//    GST_ERROR ("Failed to call Java method");
+//    (*env)->ExceptionClear (env);
+//  }
+//  (*env)->DeleteLocalRef (env, jmessage);
 }
 
 /* Retrieve errors from the bus and show them on the UI */
