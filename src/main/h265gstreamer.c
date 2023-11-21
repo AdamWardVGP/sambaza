@@ -74,13 +74,13 @@ attach_current_thread (void)
   JNIEnv *env;
   JavaVMAttachArgs args;
 
-  GST_DEBUG ("Attaching thread %p", (void *)g_thread_self ());
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Attaching thread %p", (void *)g_thread_self ());
   args.version = JNI_VERSION_1_4;
   args.name = NULL;
   args.group = NULL;
 
   if ((*java_vm)->AttachCurrentThread (java_vm, &env, &args) < 0) {
-    GST_ERROR ("Failed to attach current thread");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Failed to attach current thread");
     return NULL;
   }
 
@@ -93,7 +93,7 @@ detach_current_thread (void *env)
 {
     (void)env; //prevent compiler error on unused param. This method as a whole is passed into
     //pthread_key_create so perhaps it's used internally?
-  GST_DEBUG ("Detaching thread %p", (void *)g_thread_self ());
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Detaching thread %p", (void *)g_thread_self ());
   (*java_vm)->DetachCurrentThread (java_vm);
 }
 
@@ -131,7 +131,7 @@ set_ui_message (const gchar * message, CustomData * data)
   (void)message;
 //Temp disable, we'll just use GST_DEBUG for now. Calls originate from C thread seem to have some issue
 //  JNIEnv *env = get_jni_env();
-  GST_DEBUG ("Setting message to: %s", message);
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Setting message to: %s", message);
 //  jstring jmessage = (*env)->NewStringUTF (env, message);
 //  jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
 //  (*env)->CallStaticVoidMethod (env, clazz, set_message_method_id, jmessage);
@@ -187,8 +187,8 @@ check_initialization_complete (CustomData * data)
 {
   JNIEnv *env = get_jni_env ();
   if (!data->initialized && data->native_window && data->main_loop) {
-    GST_DEBUG
-        ("Initialization complete, notifying application. native_window:%p main_loop:%p",
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+         "Initialization complete, notifying application. native_window:%p main_loop:%p",
          (void *) data->native_window, (void *) data->main_loop);
 
     /* The main loop is running and we received a native window, inform the sink about it */
@@ -214,7 +214,8 @@ app_function (void *userdata)
   CustomData *data = (CustomData *) userdata;
   GSource *bus_source;
 
-  GST_DEBUG ("Creating pipeline in CustomData at %p", (void *) data);
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+                       "Creating pipeline in CustomData at %p", (void *) data);
 
   /* Create our own GLib Main Context and make it the default one */
   data->context = g_main_context_new ();
@@ -296,11 +297,12 @@ app_function (void *userdata)
   gst_object_unref (bus);
 
   /* Create a GLib Main Loop and set it to run */
-  GST_DEBUG ("Entering main loop... (CustomData:%p)", (void *) data);
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+        "Entering main loop... (CustomData:%p)", (void *) data);
   data->main_loop = g_main_loop_new (data->context, FALSE);
   check_initialization_complete (data);
   g_main_loop_run (data->main_loop);
-  GST_DEBUG ("Exited main loop");
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Exited main loop");
   g_main_loop_unref (data->main_loop);
   data->main_loop = NULL;
 
@@ -335,9 +337,10 @@ gst_native_init (JNIEnv * env, jobject thiz)
   GST_DEBUG_CATEGORY_INIT (debug_category, "h265gstreamer", 0,
       "Android Gstreamer");
   gst_debug_set_threshold_for_name ("h265gstreamer", GST_LEVEL_DEBUG);
-  GST_DEBUG ("Created CustomData at %p", (void *) data);
+
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Created CustomData at %p", (void *) data);
   data->jniCompanion = (*env)->NewGlobalRef (env, thiz);
-  GST_DEBUG ("Created GlobalRef for app object at %p", data->jniCompanion);
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Created GlobalRef for app object at %p", data->jniCompanion);
   pthread_create (&gst_app_thread, NULL, &app_function, data);
 }
 
@@ -349,16 +352,16 @@ gst_native_finalize (JNIEnv * env, jobject thiz)
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  GST_DEBUG ("Quitting main loop...");
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Quitting main loop...");
   g_main_loop_quit (data->main_loop);
-  GST_DEBUG ("Waiting for thread to finish...");
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Waiting for thread to finish...");
   pthread_join (gst_app_thread, NULL);
-  GST_DEBUG ("Deleting GlobalRef for app object at %p", data->jniCompanion);
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Deleting GlobalRef for app object at %p", data->jniCompanion);
   (*env)->DeleteGlobalRef (env, data->jniCompanion);
-  GST_DEBUG ("Freeing CustomData at %p", (void *) data);
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Freeing CustomData at %p", (void *) data);
   g_free (data);
   set_custom_data(NULL);
-  GST_DEBUG ("Done finalizing");
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Done finalizing");
 }
 
 /* Set pipeline to PLAYING state */
@@ -370,7 +373,7 @@ gst_native_play (JNIEnv * env, jobject thiz)
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  GST_DEBUG ("Setting state to PLAYING");
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Setting state to PLAYING");
   gst_element_set_state (data->pipeline, GST_STATE_PLAYING);
 }
 
@@ -383,7 +386,7 @@ gst_native_pause (JNIEnv * env, jobject thiz)
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  GST_DEBUG ("Setting state to PAUSED");
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Setting state to PAUSED");
   gst_element_set_state (data->pipeline, GST_STATE_PAUSED);
 }
 
@@ -396,19 +399,21 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
   if (!data)
     return;
   ANativeWindow *new_native_window = ANativeWindow_fromSurface (env, surface);
-  GST_DEBUG ("Received surface %p (native window %p)", (void *) surface, (void *) new_native_window);
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Received surface %p (native window %p)", (void *) surface, (void *) new_native_window);
 
   if (data->native_window) {
     ANativeWindow_release (data->native_window);
     if (data->native_window == new_native_window) {
-      GST_DEBUG ("New native window is the same as the previous one %p", (void *) data->native_window);
+      __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+            "New native window is the same as the previous one %p", (void *) data->native_window);
       if (data->video_sink) {
         gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->video_sink));
         gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->video_sink));
       }
       return;
     } else {
-      GST_DEBUG ("Released previous native window %p", (void *)data->native_window);
+      __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+           "Released previous native window %p", (void *)data->native_window);
       data->initialized = FALSE;
     }
   }
@@ -425,7 +430,9 @@ gst_native_surface_finalize (JNIEnv * env, jobject thiz)
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  GST_DEBUG ("Releasing Native Window %p", (void *) data->native_window);
+
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+       "Releasing Native Window %p", (void *) data->native_window);
 
   if (data->video_sink) {
     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->video_sink),
@@ -446,7 +453,7 @@ Java_org_freedesktop_gstreamer_tutorials_tutorial_13_Tutorial3_pushFrameNative(
         jbyteArray buffer,
         jstring caps) {
 
-    GST_DEBUG ("Enqueue frame data");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Enqueue frame data");
     (void)thiz;
     CustomData *data = get_custom_data();
     if (!data)
@@ -512,6 +519,8 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
 {
   JNIEnv *env = NULL;
     (void)reserved;
+
+  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "JNI_OnLoad")
 
   java_vm = vm;
   // in the other example the plugins are setup gst_init_static_plugins, since that's no longer autogenerated we'll register them here
