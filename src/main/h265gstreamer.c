@@ -339,6 +339,7 @@ gst_native_init (JNIEnv * env, jobject thiz)
 static void
 gst_native_finalize (JNIEnv * env, jobject thiz)
 {
+  (void)thiz;
   CustomData *data = get_custom_data();
   if (!data)
     return;
@@ -358,6 +359,8 @@ gst_native_finalize (JNIEnv * env, jobject thiz)
 static void
 gst_native_play (JNIEnv * env, jobject thiz)
 {
+  (void)thiz;
+  (void)env;
   CustomData *data = get_custom_data();
   if (!data)
     return;
@@ -369,6 +372,8 @@ gst_native_play (JNIEnv * env, jobject thiz)
 static void
 gst_native_pause (JNIEnv * env, jobject thiz)
 {
+  (void)env;
+  (void)thiz;
   CustomData *data = get_custom_data();
   if (!data)
     return;
@@ -380,6 +385,7 @@ gst_native_pause (JNIEnv * env, jobject thiz)
 static void
 gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
 {
+  (void)thiz;
   CustomData *data = get_custom_data();
   if (!data)
     return;
@@ -408,6 +414,8 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
 static void
 gst_native_surface_finalize (JNIEnv * env, jobject thiz)
 {
+  (void)env;
+  (void)thiz;
   CustomData *data = get_custom_data();
   if (!data)
     return;
@@ -433,7 +441,7 @@ Java_org_freedesktop_gstreamer_tutorials_tutorial_13_Tutorial3_pushFrameNative(
         jstring caps) {
 
     GST_DEBUG ("Enqueue frame data");
-
+    (void)thiz;
     CustomData *data = get_custom_data();
     if (!data)
         return;
