@@ -111,6 +111,18 @@ get_jni_env (void)
   return env;
 }
 
+static CustomData * get_custom_data() {
+    JNIEnv *env = get_jni_env();
+    jclass clazz = (*env)->FindClass(env, "com/esri/flight/codelabs/hellocmake/JniBinding");
+    return GET_CUSTOM_DATA(env, clazz, custom_data_field_id);
+}
+
+static void set_custom_data(const CustomData * data) {
+    JNIEnv *env = get_jni_env();
+    jclass clazz = (*env)->FindClass(env, "com/esri/flight/codelabs/hellocmake/JniBinding");
+    SET_CUSTOM_DATA(env, clazz, custom_data_field_id, data);
+}
+
 /* Change the content of the UI's TextView */
 static void
 set_ui_message (const gchar * message, CustomData * data)
@@ -312,7 +324,8 @@ static void
 gst_native_init (JNIEnv * env, jobject thiz)
 {
   CustomData *data = g_new0 (CustomData, 1);
-  SET_CUSTOM_DATA (env, thiz, custom_data_field_id, data);
+  set_custom_data(data);
+
   GST_DEBUG_CATEGORY_INIT (debug_category, "h265gstreamer", 0,
       "Android Gstreamer");
   gst_debug_set_threshold_for_name ("h265gstreamer", GST_LEVEL_DEBUG);
@@ -326,7 +339,7 @@ gst_native_init (JNIEnv * env, jobject thiz)
 static void
 gst_native_finalize (JNIEnv * env, jobject thiz)
 {
-  CustomData *data = GET_CUSTOM_DATA (env, thiz, custom_data_field_id);
+  CustomData *data = get_custom_data();
   if (!data)
     return;
   GST_DEBUG ("Quitting main loop...");
@@ -337,7 +350,7 @@ gst_native_finalize (JNIEnv * env, jobject thiz)
   (*env)->DeleteGlobalRef (env, data->app);
   GST_DEBUG ("Freeing CustomData at %p", (void *) data);
   g_free (data);
-  SET_CUSTOM_DATA (env, thiz, custom_data_field_id, NULL);
+  set_custom_data(NULL)
   GST_DEBUG ("Done finalizing");
 }
 
@@ -345,7 +358,7 @@ gst_native_finalize (JNIEnv * env, jobject thiz)
 static void
 gst_native_play (JNIEnv * env, jobject thiz)
 {
-  CustomData *data = GET_CUSTOM_DATA (env, thiz, custom_data_field_id);
+  CustomData *data = get_custom_data();
   if (!data)
     return;
   GST_DEBUG ("Setting state to PLAYING");
@@ -356,7 +369,7 @@ gst_native_play (JNIEnv * env, jobject thiz)
 static void
 gst_native_pause (JNIEnv * env, jobject thiz)
 {
-  CustomData *data = GET_CUSTOM_DATA (env, thiz, custom_data_field_id);
+  CustomData *data = get_custom_data();
   if (!data)
     return;
   GST_DEBUG ("Setting state to PAUSED");
@@ -367,7 +380,7 @@ gst_native_pause (JNIEnv * env, jobject thiz)
 static void
 gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
 {
-  CustomData *data = GET_CUSTOM_DATA (env, thiz, custom_data_field_id);
+  CustomData *data = get_custom_data();
   if (!data)
     return;
   ANativeWindow *new_native_window = ANativeWindow_fromSurface (env, surface);
@@ -395,7 +408,7 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
 static void
 gst_native_surface_finalize (JNIEnv * env, jobject thiz)
 {
-  CustomData *data = GET_CUSTOM_DATA (env, thiz, custom_data_field_id);
+  CustomData *data = get_custom_data();
   if (!data)
     return;
   GST_DEBUG ("Releasing Native Window %p", (void *) data->native_window);
@@ -421,17 +434,9 @@ Java_org_freedesktop_gstreamer_tutorials_tutorial_13_Tutorial3_pushFrameNative(
 
     GST_DEBUG ("Enqueue frame data");
 
-    CustomData *data = GET_CUSTOM_DATA (env, thiz, custom_data_field_id);
+    CustomData *data = get_custom_data();
     if (!data)
         return;
-
-//    GstStateChangeReturn ret = gst_element_get_state (
-//            data->pipeline, NULL, NULL,
-//            GST_CLOCK_TIME_NONE);
-//
-//    if(ret) {
-//
-//    }
 
     jbyte *buffer_ptr = (*env)->GetByteArrayElements(env, buffer, NULL);
     jsize buffer_size = (*env)->GetArrayLength(env, buffer);
