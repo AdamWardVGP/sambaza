@@ -459,7 +459,8 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_pushFrameNative(
         jbyteArray buffer,
         jstring caps) {
 
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Enqueue frame data");
+
+    //__android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Enqueue frame data");
     (void)thiz;
     CustomData *data = get_custom_data();
     if (!data)
