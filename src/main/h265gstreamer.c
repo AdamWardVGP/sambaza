@@ -331,7 +331,21 @@ app_function (void *userdata)
  * Java Bindings
  */
 
-/* Static class initializer: retrieve method and field IDs */
+void gstAndroidLog(GstDebugCategory * category,
+                   GstDebugLevel      level,
+                   const gchar      * file,
+                   const gchar      * function,
+                   gint               line,
+                   GObject          * object,
+                   GstDebugMessage  * message,
+                   gpointer           data)
+{
+    if (level <= gst_debug_category_get_threshold (category))
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "SambasaDebug", "%s,%s: %s",
+                            file, function, gst_debug_message_get(message));
+    }
+}
 
 /* Instruct the native code to create its internal data structure, pipeline and thread */
 static void
@@ -535,6 +549,12 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
       __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Error initializing gstreamer: %s\n", err->message);
       return 0;
   }
+
+  //https://stackoverflow.com/questions/23550369/what-is-the-export-gst-debug-equivalent-for-android
+  //https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstDebugLevel
+  gst_debug_set_default_threshold( GST_LEVEL_DEBUG );
+  gst_debug_add_log_function(&gstAndroidLog, NULL);
+
 
   char *version_utf8 = gst_version_string();
   __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "GST Version: %s", version_utf8);
