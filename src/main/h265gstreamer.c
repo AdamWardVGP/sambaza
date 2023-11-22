@@ -223,28 +223,34 @@ app_function (void *userdata)
 
     /* Create the empty pipeline */
     data->pipeline = gst_pipeline_new ("test-pipeline");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","pipeline %p", (void *) data->pipeline);
 
     /* Create the elements */
 
     //Plugin – app
     //Package – GStreamer Base Plug-ins
     data->appsrc = gst_element_factory_make ("appsrc", "1-appsrc");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","appsrc %p", (void *) data->appsrc);
 
     //Plugin – videoparsersbad
     //Package – GStreamer Bad Plug-ins
     data->parser = gst_element_factory_make ("h265parse", "2-parser");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","h265parse %p", (void *) data->parser);
 
     //Plugin – libav
     //Package – GStreamer FFMPEG Plug-ins
     data->decoder = gst_element_factory_make ("avdec_h265", "3-decoder");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","avdec_h265 %p", (void *) data->decoder);
 
     //Plugin – videoconvertscale
     //Package – GStreamer Base Plug-ins
     data->converter = gst_element_factory_make ("videoconvert", "4-converter");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","videoconvert %p", (void *) data->converter);
 
     //Plugin – autodetect
     //Package – GStreamer Good Plug-ins
     data->sink = gst_element_factory_make ("autovideosink", "5-sink");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","autovideosink %p", (void *) data->sink);
 
     if (!data->pipeline || !data->appsrc || !data->parser || !data->decoder || !data->converter || !data->sink) {
         gchar *message = g_strdup_printf ("Not all elements could be created.");
