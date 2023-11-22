@@ -452,7 +452,7 @@ gst_native_surface_finalize (JNIEnv * env, jobject thiz)
 }
 
 JNIEXPORT void JNICALL
-Java_org_freedesktop_gstreamer_tutorials_tutorial_13_Tutorial3_pushFrameNative(
+Java_com_auterion_sambaza_JniBinding_00024Companion_pushFrameNative(
         JNIEnv *env,
         jobject thiz,
         jlong pts,
