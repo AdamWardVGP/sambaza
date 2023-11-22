@@ -528,7 +528,14 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
 
   __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "JNI_OnLoad");
 
-  char *version_utf8 = gst_version_string ();
+  GError *err;
+  gboolean init_succeeded = gst_init_check(NULL, NULL, &err);
+  if (!init_succeeded) {
+      __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",("Error initializing gstreamer: %s\n", err->message);
+      return 0;
+  }
+
+  char *version_utf8 = gst_version_string();
   __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "GST Version: %s", version_utf8);
 
   java_vm = vm;
