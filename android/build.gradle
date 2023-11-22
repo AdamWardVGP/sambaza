@@ -36,6 +36,7 @@ allprojects {
             version "1.0.3"
 
             ndk {
+                debugSymbolLevel 'FULL'
                 abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
             }
         }
