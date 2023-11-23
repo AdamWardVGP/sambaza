@@ -331,14 +331,15 @@ app_function (void *userdata)
  * Java Bindings
  */
 
-void gstAndroidLog(GstDebugCategory * category,
+//https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstLogFunction
+static void gstAndroidLog(GstDebugCategory * category,
                    GstDebugLevel      level,
                    const gchar      * file,
                    const gchar      * function,
                    gint               line,
                    GObject          * object,
                    GstDebugMessage  * message,
-                   gpointer           data)
+                   gpointer           user_data)
 {
     (void)line;
     (void)object;
@@ -557,7 +558,7 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
   //https://stackoverflow.com/questions/23550369/what-is-the-export-gst-debug-equivalent-for-android
   //https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstDebugLevel
   gst_debug_set_default_threshold( GST_LEVEL_DEBUG );
-  gst_debug_add_log_function((void *)&gstAndroidLog, NULL, NULL);
+  gst_debug_add_log_function((GstLogFunction)gstAndroidLog, NULL, NULL);
 
 
   char *version_utf8 = gst_version_string();
