@@ -557,7 +557,7 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
   //https://stackoverflow.com/questions/23550369/what-is-the-export-gst-debug-equivalent-for-android
   //https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstDebugLevel
   gst_debug_set_default_threshold( GST_LEVEL_DEBUG );
-  gst_debug_add_log_function(&gstAndroidLog, NULL, NULL);
+  gst_debug_add_log_function((void *)&gstAndroidLog, NULL, NULL);
 
 
   char *version_utf8 = gst_version_string();
