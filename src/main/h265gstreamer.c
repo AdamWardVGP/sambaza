@@ -40,7 +40,7 @@ typedef struct _CustomData
 {
   jobject jniCompanion;                  /* JniBinding$Companion instance, used to call its methods. A global reference is kept. */
   GstElement *pipeline;         /* The running pipeline */
-  GstElement *appsrc, *parser, *decoder, *converter,  *sink; /* Elements of the pipeline */
+  GstElement *appsrc, *appsrc_queue, *parser, *decoder, *converter,  *sink; /* Elements of the pipeline */
 
   GMainContext *context;        /* GLib context used to run the main loop */
   GMainLoop *main_loop;         /* GLib main loop */
@@ -232,6 +232,9 @@ app_function (void *userdata)
     data->appsrc = gst_element_factory_make ("appsrc", "1-appsrc");
     __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","appsrc %p", (void *) data->appsrc);
 
+    data->appsrc_queue = gst_element_factory_make ("queue", "1.5-queue");
+    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","queue %p", (void *) data->queue);
+
     //Plugin – videoparsersbad
     //Package – GStreamer Bad Plug-ins
     data->parser = gst_element_factory_make ("h265parse", "2-parser");
@@ -252,7 +255,7 @@ app_function (void *userdata)
     data->sink = gst_element_factory_make ("autovideosink", "5-sink");
     __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","autovideosink %p", (void *) data->sink);
 
-    if (!data->pipeline || !data->appsrc || !data->parser || !data->decoder || !data->converter || !data->sink) {
+    if (!data->pipeline || !data->appsrc_queue || !data->appsrc || !data->parser || !data->decoder || !data->converter || !data->sink) {
         gchar *message = g_strdup_printf ("Not all elements could be created.");
         set_ui_message (message, data);
         g_free (message);
@@ -267,8 +270,8 @@ app_function (void *userdata)
                   NULL);
 
     /* Build the pipeline. */
-    gst_bin_add_many (GST_BIN (data->pipeline), data->appsrc, data->parser, data->decoder, data->converter, data->sink, NULL);
-    if (!gst_element_link_many (data->appsrc, data->parser, data->decoder, data->converter, data->sink, NULL)) {
+    gst_bin_add_many (GST_BIN (data->pipeline), data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL);
+    if (!gst_element_link_many (data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL)) {
         gst_object_unref (data->pipeline);
 
         gchar *message = g_strdup_printf ("Elements could not be linked.");
@@ -317,6 +320,7 @@ app_function (void *userdata)
   g_main_context_unref (data->context);
   gst_element_set_state (data->pipeline, GST_STATE_NULL);
   gst_object_unref (data->appsrc);
+  gst_object_unref(data->appsrc_queue);
   gst_object_unref (data->parser);
   gst_object_unref (data->decoder);
   gst_object_unref (data->converter);
