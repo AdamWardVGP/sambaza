@@ -276,6 +276,11 @@ app_function (void *userdata)
     //alignment: au "each output buffer contains the NALs for a whole picture."
     // no idea what DJI is giving us...
     //https://gstreamer-devel.narkive.com/2i5BzQYy/what-is-the-alignment-capability-in-video-x-h264
+    //
+    //
+    // Could be a capsfilter issue?
+    // https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp/issues/431
+    // "stream-format", G_TYPE_STRING, "hvc1", //or hev1 or byte-stream
     GstCaps *caps = gst_caps_new_simple("video/x-h265",
                                "stream-format", G_TYPE_STRING, "byte-stream",
                                "alignment", G_TYPE_STRING, "au",
@@ -576,7 +581,7 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
 
   //https://stackoverflow.com/questions/23550369/what-is-the-export-gst-debug-equivalent-for-android
   //https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstDebugLevel
-  gst_debug_set_default_threshold( GST_LEVEL_INFO );
+  gst_debug_set_default_threshold( GST_LEVEL_ERROR );
 
     //macro expansion either results in one of two problems
     // - We get a compile issue because there is a (void *) conversion
