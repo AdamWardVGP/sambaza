@@ -262,12 +262,27 @@ app_function (void *userdata)
         return NULL;
     }
 
-    g_object_set (G_OBJECT (data->appsrc),
+    g_object_set(G_OBJECT (data->appsrc),
                   "do-timestamp", TRUE,
                   "is-live", TRUE,
                   "format", GST_FORMAT_TIME,
                   "max-buffers", 5,
                   NULL);
+
+    // According to GST docs we don't need to set caps when calling gst_app_src_push_sample
+    // https://gstreamer.freedesktop.org/documentation/applib/gstappsrc.html?gi-language=c
+    // But the logs complain "gst_app_src_push_sample_internal: received sample without caps"
+    //
+    //alignment: au "each output buffer contains the NALs for a whole picture."
+    // no idea what DJI is giving us...
+    //https://gstreamer-devel.narkive.com/2i5BzQYy/what-is-the-alignment-capability-in-video-x-h264
+    GstCaps *caps = gst_caps_new_simple("video/x-h265",
+                               "stream-format", G_TYPE_STRING, "byte-stream",
+                               "alignment", G_TYPE_STRING, "au",
+                               NULL);
+
+    g_object_set(G_OBJECT (data->appsrc), "caps",  caps,
+                 NULL);
 
     /* Build the pipeline. */
     gst_bin_add_many (GST_BIN (data->pipeline), data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL);
