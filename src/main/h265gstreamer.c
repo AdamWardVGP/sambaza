@@ -343,7 +343,7 @@ static void gstAndroidLog(GstDebugCategory * category,
 {
     (void)line;
     (void)object;
-    (void)data;
+    (void)user_data;
 
     if (level <= gst_debug_category_get_threshold (category))
     {
@@ -558,7 +558,17 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
   //https://stackoverflow.com/questions/23550369/what-is-the-export-gst-debug-equivalent-for-android
   //https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstDebugLevel
   gst_debug_set_default_threshold( GST_LEVEL_DEBUG );
-  gst_debug_add_log_function((GstLogFunction)gstAndroidLog, NULL, NULL);
+
+    //macro expansion either results in one of two problems
+    // - We get a compile issue because there is a (void *) conversion
+    // - We get a compile issue because the expected usage is against the GSTLogFunction type
+    // we cant be both so we just have to ignore the problem.
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wpedantic"
+
+    gst_debug_add_log_function(gstAndroidLog, NULL, NULL);
+
+    #pragma GCC diagnostic pop
 
 
   char *version_utf8 = gst_version_string();
