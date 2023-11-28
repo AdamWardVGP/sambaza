@@ -184,7 +184,7 @@ state_changed_cb (GstBus * bus, GstMessage * msg, CustomData * data)
 static void
 check_initialization_complete (CustomData * data)
 {
-  JNIEnv *env = get_jni_env();
+//  JNIEnv *env = get_jni_env();
   if (!data->initialized && data->native_window && data->main_loop) {
     __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
          "Initialization complete, notifying application. native_window:%p main_loop:%p",
