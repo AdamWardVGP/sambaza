@@ -11,14 +11,14 @@ class JniBinding {
      */
     init {
       System.loadLibrary("sambaza")
-      nativeInit()
     }
 
     /** Native code will use this to keep internal state */
     private val nativeCustomData: Long = 0
 
-    /** Initialize native code, build pipeline, etc */
-    private external fun gstNativeInit(filepath: String)
+    /** Initialize native code. Application is responsible to call this early and provide
+     * file path to build pipeline */
+    external fun gstNativeInit(filepath: String)
 
     /** Destroy pipeline and shutdown native code */
     public external fun nativeFinalize()
