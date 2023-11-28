@@ -18,7 +18,7 @@ class JniBinding {
     private val nativeCustomData: Long = 0
 
     /** Initialize native code, build pipeline, etc */
-    private external fun nativeInit()
+    private external fun gstNativeInit(filepath: String)
 
     /** Destroy pipeline and shutdown native code */
     public external fun nativeFinalize()
