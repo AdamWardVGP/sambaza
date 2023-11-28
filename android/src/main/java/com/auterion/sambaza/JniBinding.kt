@@ -18,7 +18,7 @@ class JniBinding {
 
     /** Initialize native code. Application is responsible to call this early and provide
      * file path to build pipeline */
-    external fun gstNativeInit(filepath: String)
+    public external fun gstNativeInit(filepath: String)
 
     /** Destroy pipeline and shutdown native code */
     public external fun nativeFinalize()
