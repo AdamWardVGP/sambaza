@@ -184,7 +184,7 @@ state_changed_cb (GstBus * bus, GstMessage * msg, CustomData * data)
 static void
 check_initialization_complete (CustomData * data)
 {
-  JNIEnv *env = get_jni_env ();
+  JNIEnv *env = get_jni_env();
   if (!data->initialized && data->native_window && data->main_loop) {
     __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
          "Initialization complete, notifying application. native_window:%p main_loop:%p",
@@ -194,13 +194,14 @@ check_initialization_complete (CustomData * data)
     gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->sink),
         (guintptr) data->native_window);
 
-    jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
-    (*env)->CallStaticVoidMethod (env, clazz, on_gstreamer_initialized_method_id);
-
-    if ((*env)->ExceptionCheck (env)) {
-      GST_ERROR ("Failed to call Java method");
-      (*env)->ExceptionClear (env);
-    }
+    //No idea why we're getting class not found, but lets just skip for now
+//    jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
+//    (*env)->CallStaticVoidMethod (env, clazz, on_gstreamer_initialized_method_id);
+//
+//    if ((*env)->ExceptionCheck (env)) {
+//      GST_ERROR ("Failed to call Java method");
+//      (*env)->ExceptionClear (env);
+//    }
     data->initialized = TRUE;
   }
 }
@@ -573,16 +574,16 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
   //https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstDebugLevel
   gst_debug_set_default_threshold( GST_LEVEL_ERROR );
 
-    //macro expansion either results in one of two problems
-    // - We get a compile issue because there is a (void *) conversion
-    // - We get a compile issue because the expected usage is against the GSTLogFunction type
-    // we cant be both so we just have to ignore the problem.
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wpedantic"
+  //macro expansion either results in one of two problems
+  // - We get a compile issue because there is a (void *) conversion
+  // - We get a compile issue because the expected usage is against the GSTLogFunction type
+  // we cant be both so we just have to ignore the problem.
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wpedantic"
 
-    gst_debug_add_log_function(gstAndroidLog, NULL, NULL);
+  gst_debug_add_log_function(gstAndroidLog, NULL, NULL);
 
-    #pragma GCC diagnostic pop
+  #pragma GCC diagnostic pop
 
 
   char *version_utf8 = gst_version_string();
