@@ -45,7 +45,6 @@ typedef struct _CustomData
   GMainContext *context;        /* GLib context used to run the main loop */
   GMainLoop *main_loop;         /* GLib main loop */
   gboolean initialized;         /* To avoid informing the UI multiple times about the initialization */
-  GstElement *video_sink;       /* The video sink element which receives XOverlay commands */
   ANativeWindow *native_window; /* The Android native window where video will be rendered */
 
   /* appsrc buffers */
@@ -192,7 +191,7 @@ check_initialization_complete (CustomData * data)
          (void *) data->native_window, (void *) data->main_loop);
 
     /* The main loop is running and we received a native window, inform the sink about it */
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->video_sink),
+    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->sink),
         (guintptr) data->native_window);
 
     jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
@@ -304,14 +303,6 @@ app_function (void *userdata)
   /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
   gst_element_set_state (data->pipeline, GST_STATE_READY);
 
-  data->video_sink =
-      gst_bin_get_by_interface (GST_BIN (data->pipeline),
-      GST_TYPE_VIDEO_OVERLAY);
-  if (!data->video_sink) {
-    GST_ERROR ("Could not retrieve video sink");
-    return NULL;
-  }
-
   /* Instruct the bus to emit signals for each received message, and connect to the interesting signals */
   bus = gst_element_get_bus (data->pipeline);
   bus_source = gst_bus_create_watch (bus);
@@ -345,7 +336,6 @@ app_function (void *userdata)
   gst_object_unref (data->decoder);
   gst_object_unref (data->converter);
   gst_object_unref (data->sink);
-  gst_object_unref (data->video_sink);
   gst_object_unref (data->pipeline);
 
   return NULL;
@@ -455,9 +445,9 @@ gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
     if (data->native_window == new_native_window) {
       __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
             "New native window is the same as the previous one %p", (void *) data->native_window);
-      if (data->video_sink) {
-        gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->video_sink));
-        gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->video_sink));
+      if (data->sink) {
+        gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->sink));
+        gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->sink));
       }
       return;
     } else {
@@ -483,8 +473,8 @@ gst_native_surface_finalize (JNIEnv * env, jobject thiz)
   __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
        "Releasing Native Window %p", (void *) data->native_window);
 
-  if (data->video_sink) {
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->video_sink),
+  if (data->sink) {
+    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->sink),
         (guintptr) NULL);
     gst_element_set_state (data->pipeline, GST_STATE_READY);
   }
