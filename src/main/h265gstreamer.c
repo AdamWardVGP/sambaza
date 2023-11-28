@@ -272,7 +272,7 @@ app_function (void *userdata)
                  NULL);
 
     JNIEnv *env = get_jni_env();
-    env->ReleaseStringUTFChars(data->file_path);
+    (*env)->ReleaseStringUTFChars(env, data->file_path);
 
 //    g_object_set(G_OBJECT (data->appsrc),
 //                  "do-timestamp", TRUE,
@@ -389,7 +389,7 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_gstNativeInit(
     CustomData *data = g_new0 (CustomData, 1);
     set_custom_data(data);
 
-    data->file_path = (*env)->GetStringUTFChars(env, filepath, 0);
+    data->file_path = (gchar *)(*env)->GetStringUTFChars(env, filepath, 0);
     __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Using provided filepath %s", data->file_path);
 
     GST_DEBUG_CATEGORY_INIT (debug_category, "h265gstreamer", 0, "Android Gstreamer");
