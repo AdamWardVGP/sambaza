@@ -374,7 +374,7 @@ static void gst_native_play(JNIEnv * env, jobject thiz) {
 
   CustomData *data = get_custom_data();
     if (!data){
-        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort play")
+        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort play");
         return;
     }
 
@@ -389,7 +389,7 @@ static void gst_native_pause(JNIEnv * env, jobject thiz) {
 
   CustomData *data = get_custom_data();
     if (!data){
-        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort pause")
+        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort pause");
         return;
     }
 
@@ -400,11 +400,11 @@ static void gst_native_pause(JNIEnv * env, jobject thiz) {
 static void gst_native_surface_init(JNIEnv * env, jobject thiz, jobject surface) {
   (void)thiz;
 
-  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "native surface init")
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "native surface init");
 
   CustomData *data = get_custom_data();
   if (!data){
-      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort")
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort");
       return;
   }
 
