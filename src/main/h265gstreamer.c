@@ -529,7 +529,7 @@ jint JNI_OnLoad (JavaVM * vm, void *reserved)
 
   //https://stackoverflow.com/questions/23550369/what-is-the-export-gst-debug-equivalent-for-android
   //https://gstreamer.freedesktop.org/documentation/gstreamer/gstinfo.html?gi-language=c#GstDebugLevel
-  gst_debug_set_default_threshold( GST_LEVEL_DEBUG );
+  gst_debug_set_default_threshold( GST_LEVEL_INFO );
 
   //macro expansion either results in one of two problems
   // - We get a compile issue because there is a (void *) conversion
