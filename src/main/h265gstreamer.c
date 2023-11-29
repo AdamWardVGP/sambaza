@@ -315,12 +315,8 @@ static void gstAndroidLog(GstDebugCategory * category,
     (void)line;
     (void)object;
     (void)user_data;
-
-    if (level <= gst_debug_category_get_threshold(category))
-    {
         __android_log_print(ANDROID_LOG_ERROR, "SambasaDebug", "%s,%s: %s",
                             file, function, gst_debug_message_get(message));
-    }
 }
 
 /* Instruct the native code to create its internal data structure, pipeline and thread */
