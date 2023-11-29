@@ -312,6 +312,8 @@ static void gstAndroidLog(GstDebugCategory * category,
                    GObject          * object,
                    GstDebugMessage  * message,
                    gpointer           user_data) {
+    (void)category;
+    (void)level;
     (void)line;
     (void)object;
     (void)user_data;
