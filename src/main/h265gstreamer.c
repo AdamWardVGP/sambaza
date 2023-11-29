@@ -10,19 +10,16 @@
 #include <gst/base/gstqueuearray.h>
 #include <gst/app/gstappsrc.h>
 
-GST_DEBUG_CATEGORY_STATIC (debug_category);
-#define GST_CAT_DEFAULT debug_category
-
 /*
  * These macros provide a way to store the native pointer to CustomData, which might be 32 or 64 bits, into
  * a jlong, which is always 64 bits, without warnings.
  */
 #if GLIB_SIZEOF_VOID_P == 8
-# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(*env)->GetStaticLongField (env, thiz, fieldID)
-# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetStaticLongField (env, thiz, fieldID, (jlong)data)
+# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(*env)->GetStaticLongField(env, thiz, fieldID)
+# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetStaticLongField(env, thiz, fieldID, (jlong)data)
 #else
-# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(jint)(*env)->GetStaticLongField (env, thiz, fieldID)
-# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetStaticLongField (env, thiz, fieldID, (jlong)(jint)data)
+# define GET_CUSTOM_DATA(env, thiz, fieldID) (CustomData *)(jint)(*env)->GetStaticLongField(env, thiz, fieldID)
+# define SET_CUSTOM_DATA(env, thiz, fieldID, data) (*env)->SetStaticLongField(env, thiz, fieldID, (jlong)(jint)data)
 #endif
 
 //its likely we need to add these plugins
@@ -38,9 +35,9 @@ GST_PLUGIN_STATIC_DECLARE(autodetect);
 /* Structure to contain all our information, so we can pass it to callbacks */
 typedef struct _CustomData
 {
-  jobject jniCompanion;                  /* JniBinding$Companion instance, used to call its methods. A global reference is kept. */
+  jobject jniCompanion;         /* JniBinding$Companion instance, used to call its methods. A global reference is kept. */
   GstElement *pipeline;         /* The running pipeline */
-  GstElement *filesrc, *appsrc_queue, *parser, *decoder, *converter,  *sink; /* Elements of the pipeline */
+  GstElement *appsrc, *appsrc_queue, *parser, *decoder, *converter,  *sink; /* Elements of the pipeline */
 
   GMainContext *context;        /* GLib context used to run the main loop */
   GMainLoop *main_loop;         /* GLib main loop */
@@ -69,19 +66,17 @@ static jmethodID on_gstreamer_initialized_method_id;
  */
 
 /* Register this thread with the VM */
-static JNIEnv *
-attach_current_thread (void)
-{
+static JNIEnv * attach_current_thread (void) {
   JNIEnv *env;
   JavaVMAttachArgs args;
 
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Attaching thread %p", (void *)g_thread_self ());
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Attaching thread %p", (void *)g_thread_self());
   args.version = JNI_VERSION_1_4;
   args.name = NULL;
   args.group = NULL;
 
-  if ((*java_vm)->AttachCurrentThread (java_vm, &env, &args) < 0) {
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Failed to attach current thread");
+  if ((*java_vm)->AttachCurrentThread(java_vm, &env, &args) < 0) {
+    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Failed to attach current thread");
     return NULL;
   }
 
@@ -89,24 +84,20 @@ attach_current_thread (void)
 }
 
 /* Unregister this thread from the VM */
-static void
-detach_current_thread (void *env)
-{
-    (void)env; //prevent compiler error on unused param. This method as a whole is passed into
-    //pthread_key_create so perhaps it's used internally?
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Detaching thread %p", (void *)g_thread_self ());
-  (*java_vm)->DetachCurrentThread (java_vm);
+static void detach_current_thread(void *env) {
+  (void)env; //prevent compiler error on unused param. This method as a whole is passed into
+  //pthread_key_create so perhaps it's used internally?
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Detaching thread %p", (void *)g_thread_self());
+  (*java_vm)->DetachCurrentThread(java_vm);
 }
 
 /* Retrieve the JNI environment for this thread */
-static JNIEnv *
-get_jni_env (void)
-{
+static JNIEnv * get_jni_env(void) {
   JNIEnv *env;
 
-  if ((env = pthread_getspecific (current_jni_env)) == NULL) {
-    env = attach_current_thread ();
-    pthread_setspecific (current_jni_env, env);
+  if ((env = pthread_getspecific(current_jni_env)) == NULL) {
+    env = attach_current_thread();
+    pthread_setspecific(current_jni_env, env);
   }
 
   return env;
@@ -124,229 +115,190 @@ static void set_custom_data(const CustomData * data) {
     SET_CUSTOM_DATA(env, clazz, custom_data_field_id, data);
 }
 
-/* Change the content of the UI's TextView */
-static void
-set_ui_message (const gchar * message, CustomData * data)
-{
-  (void)data;
-  (void)message;
-//Temp disable, we'll just use GST_DEBUG for now. Calls originate from C thread seem to have some issue
-//  JNIEnv *env = get_jni_env();
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Setting message to: %s", message);
-//  jstring jmessage = (*env)->NewStringUTF (env, message);
-//  jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
-//  (*env)->CallStaticVoidMethod (env, clazz, set_message_method_id, jmessage);
-//  if ((*env)->ExceptionCheck (env)) {
-//    GST_ERROR ("Failed to call Java method");
-//    (*env)->ExceptionClear (env);
-//  }
-//  (*env)->DeleteLocalRef (env, jmessage);
-}
-
 /* Retrieve errors from the bus and show them on the UI */
-static void
-error_cb (GstBus * bus, GstMessage * msg, CustomData * data)
-{
+static void error_cb(GstBus * bus, GstMessage * msg, CustomData * data) {
     (void)bus;
 
   GError *err;
   gchar *debug_info;
   gchar *message_string;
 
-  gst_message_parse_error (msg, &err, &debug_info);
-  message_string =
-      g_strdup_printf ("Error received from element %s: %s",
-      GST_OBJECT_NAME (msg->src), err->message);
-  g_clear_error (&err);
-  g_free (debug_info);
-  set_ui_message (message_string, data);
-  g_free (message_string);
-  gst_element_set_state (data->pipeline, GST_STATE_NULL);
+  gst_message_parse_error(msg, &err, &debug_info);
+  message_string = g_strdup_printf("Error received from element %s: %s",
+                                    GST_OBJECT_NAME(msg->src), err->message);
+  g_clear_error(&err);
+  g_free(debug_info);
+  g_free(message_string);
+
+  gst_element_set_state(data->pipeline, GST_STATE_NULL);
 }
 
 /* Notify UI about pipeline state changes */
-static void
-state_changed_cb (GstBus * bus, GstMessage * msg, CustomData * data)
-{
-    (void)bus;
+static void state_changed_cb(GstBus * bus, GstMessage * msg, CustomData * data) {
+  (void)bus;
 
   GstState old_state, new_state, pending_state;
-  gst_message_parse_state_changed (msg, &old_state, &new_state, &pending_state);
+  gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
   /* Only pay attention to messages coming from the pipeline, not its children */
-  if (GST_MESSAGE_SRC (msg) == GST_OBJECT (data->pipeline)) {
-    gchar *message = g_strdup_printf ("State changed to %s",
-        gst_element_state_get_name (new_state));
-    set_ui_message (message, data);
-    g_free (message);
+  if (GST_MESSAGE_SRC(msg) == GST_OBJECT(data->pipeline)) {
+    gchar *message = g_strdup_printf("State changed to %s", gst_element_state_get_name(new_state));
+    g_free(message);
   }
 }
 
 /* Check if all conditions are met to report GStreamer as initialized.
  * These conditions will change depending on the application */
-static void
-check_initialization_complete (CustomData * data)
-{
-//  JNIEnv *env = get_jni_env();
+static void check_initialization_complete(CustomData * data) {
   if (!data->initialized && data->native_window && data->main_loop) {
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer",
          "Initialization complete, notifying application. native_window:%p main_loop:%p",
          (void *) data->native_window, (void *) data->main_loop);
 
     /* The main loop is running and we received a native window, inform the sink about it */
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->sink),
+    gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(data->sink),
         (guintptr) data->native_window);
 
-    //No idea why we're getting class not found, but lets just skip for now
-//    jclass clazz = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding");
-//    (*env)->CallStaticVoidMethod (env, clazz, on_gstreamer_initialized_method_id);
-//
-//    if ((*env)->ExceptionCheck (env)) {
-//      GST_ERROR ("Failed to call Java method");
-//      (*env)->ExceptionClear (env);
-//    }
     data->initialized = TRUE;
   }
 }
 
 /* Main method for the native code. This is executed on its own thread. */
-static void *
-app_function (void *userdata)
-{
+static void * app_function(void *userdata) {
   GstBus *bus;
   CustomData *data = (CustomData *) userdata;
   GSource *bus_source;
 
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer",
                        "Creating pipeline in CustomData at %p", (void *) data);
 
   /* Create our own GLib Main Context and make it the default one */
-  data->context = g_main_context_new ();
-  g_main_context_push_thread_default (data->context);
+  data->context = g_main_context_new();
+  g_main_context_push_thread_default(data->context);
 
-    /* Create the empty pipeline */
-    data->pipeline = gst_pipeline_new ("test-pipeline");
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","pipeline %p", (void *) data->pipeline);
+  /* Create the empty pipeline */
+  data->pipeline = gst_pipeline_new("test-pipeline");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","pipeline %p", (void *) data->pipeline);
 
-    /* Create the elements */
+  /* Create the elements */
 
-    //Plugin – app
-    //Package – GStreamer Base Plug-ins
-    //data->appsrc = gst_element_factory_make ("appsrc", "1-appsrc");
-    //__android_log_print (ANDROID_LOG_INFO, "h265gstreamer","appsrc %p", (void *) data->appsrc);
+  //Plugin – app
+  //Package – GStreamer Base Plug-ins
+  data->appsrc = gst_element_factory_make("appsrc", "1-appsrc");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","appsrc %p", (void *) data->appsrc);
 
-    data->filesrc = gst_element_factory_make ("filesrc", "1-filesrc");
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","filesrc %p", (void *) data->filesrc);
+//  data->filesrc = gst_element_factory_make ("filesrc", "1-filesrc");
+//  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","filesrc %p", (void *) data->filesrc);
 
-    data->appsrc_queue = gst_element_factory_make ("queue", "1.5-queue");
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","queue %p", (void *) data->queue);
+  data->appsrc_queue = gst_element_factory_make("queue", "1.5-queue");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","queue %p", (void *) data->appsrc_queue);
 
-    //Plugin – videoparsersbad
-    //Package – GStreamer Bad Plug-ins
-    data->parser = gst_element_factory_make ("h265parse", "2-parser");
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","h265parse %p", (void *) data->parser);
+  //Plugin – videoparsersbad
+  //Package – GStreamer Bad Plug-ins
+  data->parser = gst_element_factory_make("h265parse", "2-parser");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","h265parse %p", (void *) data->parser);
 
-    //Plugin – libav
-    //Package – GStreamer FFMPEG Plug-ins
-    data->decoder = gst_element_factory_make ("avdec_h265", "3-decoder");
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","avdec_h265 %p", (void *) data->decoder);
+  //Plugin – libav
+  //Package – GStreamer FFMPEG Plug-ins
+  data->decoder = gst_element_factory_make("avdec_h265", "3-decoder");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","avdec_h265 %p", (void *) data->decoder);
 
-    //Plugin – videoconvertscale
-    //Package – GStreamer Base Plug-ins
-    data->converter = gst_element_factory_make ("videoconvert", "4-converter");
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","videoconvert %p", (void *) data->converter);
+  //Plugin – videoconvertscale
+  //Package – GStreamer Base Plug-ins
+  data->converter = gst_element_factory_make("videoconvert", "4-converter");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","videoconvert %p", (void *) data->converter);
 
-    //Plugin – autodetect
-    //Package – GStreamer Good Plug-ins
-    data->sink = gst_element_factory_make ("autovideosink", "5-sink");
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","autovideosink %p", (void *) data->sink);
+  //Plugin – autodetect
+  //Package – GStreamer Good Plug-ins
+  data->sink = gst_element_factory_make("autovideosink", "5-sink");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","autovideosink %p", (void *) data->sink);
 
-    if (!data->pipeline || !data->appsrc_queue || !data->filesrc || !data->parser || !data->decoder || !data->converter || !data->sink) {
-        gchar *message = g_strdup_printf ("Not all elements could be created.");
-        set_ui_message (message, data);
-        g_free (message);
-        return NULL;
-    }
+  if (!data->pipeline || !data->appsrc_queue || !data->appsrc || !data->parser || !data->decoder || !data->converter || !data->sink) {
+      gchar *message = g_strdup_printf("Not all elements could be created.");
+      set_ui_message(message, data);
+      g_free(message);
+      return NULL;
+  }
 
-    g_object_set(G_OBJECT (data->filesrc),
-                 "location", data->file_path,
-                 NULL);
+//  g_object_set(G_OBJECT (data->filesrc),
+//               "location", data->file_path,
+//               NULL);
 
-//    g_object_set(G_OBJECT (data->appsrc),
-//                  "do-timestamp", TRUE,
-//                  "is-live", TRUE,
-//                  "format", GST_FORMAT_TIME,
-//                  "max-buffers", 5,
-//                  NULL);
+  g_object_set(G_OBJECT(data->appsrc),
+                "do-timestamp", TRUE,
+                "is-live", TRUE,
+                "format", GST_FORMAT_TIME,
+                "max-buffers", 5,
+                NULL);
 
-    // According to GST docs we don't need to set caps when calling gst_app_src_push_sample
-    // https://gstreamer.freedesktop.org/documentation/applib/gstappsrc.html?gi-language=c
-    // But the logs complain "gst_app_src_push_sample_internal: received sample without caps"
-    //
-    //alignment: au "each output buffer contains the NALs for a whole picture."
-    // no idea what DJI is giving us...
-    //https://gstreamer-devel.narkive.com/2i5BzQYy/what-is-the-alignment-capability-in-video-x-h264
-    //
-    //
-    // Could be a capsfilter issue?
-    // https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp/issues/431
-    // "stream-format", G_TYPE_STRING, "hvc1", //or hev1 or byte-stream
-//    GstCaps *caps = gst_caps_new_simple("video/x-h265",
-//                               "stream-format", G_TYPE_STRING, "byte-stream",
-//                               "alignment", G_TYPE_STRING, "au",
-//                               NULL);
-//
-//    g_object_set(G_OBJECT (data->appsrc), "caps",  caps,
-//                 NULL);
+  // According to GST docs we don't need to set caps when calling gst_app_src_push_sample
+  // https://gstreamer.freedesktop.org/documentation/applib/gstappsrc.html?gi-language=c
+  // But the logs complain "gst_app_src_push_sample_internal: received sample without caps"
+  //
+  //alignment: au "each output buffer contains the NALs for a whole picture."
+  // no idea what DJI is giving us...
+  //https://gstreamer-devel.narkive.com/2i5BzQYy/what-is-the-alignment-capability-in-video-x-h264
+  //
+  //
+  // Could be a capsfilter issue?
+  // https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp/issues/431
+  // "stream-format", G_TYPE_STRING, "hvc1", //or hev1 or byte-stream
+  //    GstCaps *caps = gst_caps_new_simple("video/x-h265",
+  //                               "stream-format", G_TYPE_STRING, "byte-stream",
+  //                               "alignment", G_TYPE_STRING, "au",
+  //                               NULL);
+  //
+  //    g_object_set(G_OBJECT (data->appsrc), "caps",  caps,
+  //                 NULL);
 
-    /* Build the pipeline. */
-    gst_bin_add_many (GST_BIN (data->pipeline), data->filesrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL);
-    if (!gst_element_link_many (data->filesrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL)) {
-        gst_object_unref (data->pipeline);
+  /* Build the pipeline. */
+  gst_bin_add_many(GST_BIN(data->pipeline), data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL);
+  if (!gst_element_link_many(data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL)) {
+      gst_object_unref(data->pipeline);
 
-        gchar *message = g_strdup_printf ("Elements could not be linked.");
-        set_ui_message (message, data);
-        g_free (message);
+      gchar *message = g_strdup_printf("Elements could not be linked.");
+      set_ui_message(message, data);
+      g_free(message);
 
-        return NULL;
-    }
+      return NULL;
+  }
 
   /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
-  gst_element_set_state (data->pipeline, GST_STATE_READY);
+  gst_element_set_state(data->pipeline, GST_STATE_READY);
 
-  /* Instruct the bus to emit signals for each received message, and connect to the interesting signals */
-  bus = gst_element_get_bus (data->pipeline);
-  bus_source = gst_bus_create_watch (bus);
-  g_source_set_callback (bus_source, (GSourceFunc) gst_bus_async_signal_func,
-      NULL, NULL);
-  g_source_attach (bus_source, data->context);
-  g_source_unref (bus_source);
-  g_signal_connect (G_OBJECT (bus), "message::error", (GCallback) error_cb,
-      data);
-  g_signal_connect (G_OBJECT (bus), "message::state-changed",
-      (GCallback) state_changed_cb, data);
-  gst_object_unref (bus);
+  /* Instruct the bus to emit signals for each received message. We then hook those signals up to our
+   * own methods `error_cb` and `state_changed_cb` */
+  bus = gst_element_get_bus(data->pipeline);
+  bus_source = gst_bus_create_watch(bus);
+  g_source_set_callback(bus_source,(GSourceFunc) gst_bus_async_signal_func, NULL, NULL);
+  g_source_attach(bus_source, data->context);
+  g_source_unref(bus_source);
+  g_signal_connect(G_OBJECT(bus), "message::error", (GCallback) error_cb, data);
+  g_signal_connect(G_OBJECT(bus), "message::state-changed", (GCallback) state_changed_cb, data);
+  gst_object_unref(bus);
 
   /* Create a GLib Main Loop and set it to run */
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer",
         "Entering main loop... (CustomData:%p)", (void *) data);
-  data->main_loop = g_main_loop_new (data->context, FALSE);
-  check_initialization_complete (data);
-  g_main_loop_run (data->main_loop);
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Exited main loop");
-  g_main_loop_unref (data->main_loop);
+  data->main_loop = g_main_loop_new(data->context, FALSE);
+  check_initialization_complete(data);
+
+  //block till data->main_loop returns
+  g_main_loop_run(data->main_loop);
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Exited main loop");
+  g_main_loop_unref(data->main_loop);
   data->main_loop = NULL;
 
   /* Free resources */
-  g_main_context_pop_thread_default (data->context);
-  g_main_context_unref (data->context);
-  gst_element_set_state (data->pipeline, GST_STATE_NULL);
-  gst_object_unref (data->filesrc);
+  g_main_context_pop_thread_default(data->context);
+  g_main_context_unref(data->context);
+  gst_element_set_state(data->pipeline, GST_STATE_NULL);
+  gst_object_unref(data->appsrc);
   gst_object_unref(data->appsrc_queue);
-  gst_object_unref (data->parser);
-  gst_object_unref (data->decoder);
-  gst_object_unref (data->converter);
-  gst_object_unref (data->sink);
-  gst_object_unref (data->pipeline);
+  gst_object_unref(data->parser);
+  gst_object_unref(data->decoder);
+  gst_object_unref(data->converter);
+  gst_object_unref(data->sink);
+  gst_object_unref(data->pipeline);
 
   return NULL;
 }
@@ -363,13 +315,12 @@ static void gstAndroidLog(GstDebugCategory * category,
                    gint               line,
                    GObject          * object,
                    GstDebugMessage  * message,
-                   gpointer           user_data)
-{
+                   gpointer           user_data) {
     (void)line;
     (void)object;
     (void)user_data;
 
-    if (level <= gst_debug_category_get_threshold (category))
+    if (level <= gst_debug_category_get_threshold(category))
     {
         __android_log_print(ANDROID_LOG_ERROR, "SambasaDebug", "%s,%s: %s",
                             file, function, gst_debug_message_get(message));
@@ -383,121 +334,118 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_gstNativeInit(
     jobject thiz,
     jstring filepath) {
 
-    CustomData *data = g_new0 (CustomData, 1);
+    CustomData *data = g_new0CustomData, 1);
     set_custom_data(data);
 
-    data->file_path = (gchar *)(*env)->GetStringUTFChars(env, filepath, 0);
+    data->file_path =(gchar *)(*env)->GetStringUTFChars(env, filepath, 0);
     (*env)->ReleaseStringUTFChars(env, filepath, data->file_path);
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Using provided filepath %s", data->file_path);
+    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Using provided filepath %s", data->file_path);
 
-    GST_DEBUG_CATEGORY_INIT (debug_category, "h265gstreamer", 0, "Android Gstreamer");
-    gst_debug_set_threshold_for_name ("h265gstreamer", GST_LEVEL_DEBUG);
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Created CustomData at %p", (void *) data);
+    GST_DEBUG_CATEGORY_INIT(debug_category, "h265gstreamer", 0, "Android Gstreamer");
+    gst_debug_set_threshold_for_name("h265gstreamer", GST_LEVEL_DEBUG);
+    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Created CustomData at %p", (void *) data);
 
-    data->jniCompanion = (*env)->NewGlobalRef (env, thiz);
-    __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Created GlobalRef for app object at %p", data->jniCompanion);
+    data->jniCompanion = (*env)->NewGlobalRef(env, thiz);
+    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Created GlobalRef for app object at %p", data->jniCompanion);
 
-    pthread_create (&gst_app_thread, NULL, &app_function, data);
+    pthread_create(&gst_app_thread, NULL, &app_function, data);
 
 }
 
 /* Quit the main loop, remove the native thread and free resources */
-static void
-gst_native_finalize (JNIEnv * env, jobject thiz)
-{
+static void gst_native_finalize (JNIEnv * env, jobject thiz) {
   (void)thiz;
+
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Quitting main loop...");
-  g_main_loop_quit (data->main_loop);
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Waiting for thread to finish...");
-  pthread_join (gst_app_thread, NULL);
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Deleting GlobalRef for app object at %p", data->jniCompanion);
-  (*env)->DeleteGlobalRef (env, data->jniCompanion);
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Freeing CustomData at %p", (void *) data);
-  g_free (data);
+
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Quitting main loop...");
+  g_main_loop_quit(data->main_loop);
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Waiting for thread to finish...");
+  pthread_join(gst_app_thread, NULL);
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Deleting GlobalRef for app object at %p", data->jniCompanion);
+  (*env)->DeleteGlobalRef(env, data->jniCompanion);
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Freeing CustomData at %p", (void *) data);
+  g_free(data);
   set_custom_data(NULL);
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Done finalizing");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Done finalizing");
 }
 
 /* Set pipeline to PLAYING state */
-static void
-gst_native_play (JNIEnv * env, jobject thiz)
-{
+static void gst_native_play(JNIEnv * env, jobject thiz) {
   (void)thiz;
   (void)env;
+
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Setting state to PLAYING");
-  gst_element_set_state (data->pipeline, GST_STATE_PLAYING);
+
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Setting state to PLAYING");
+  gst_element_set_state(data->pipeline, GST_STATE_PLAYING);
 }
 
 /* Set pipeline to PAUSED state */
-static void
-gst_native_pause (JNIEnv * env, jobject thiz)
-{
+static void gst_native_pause(JNIEnv * env, jobject thiz) {
   (void)env;
   (void)thiz;
+
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Setting state to PAUSED");
-  gst_element_set_state (data->pipeline, GST_STATE_PAUSED);
+
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Setting state to PAUSED");
+  gst_element_set_state(data->pipeline, GST_STATE_PAUSED);
 }
 
-
-static void
-gst_native_surface_init (JNIEnv * env, jobject thiz, jobject surface)
-{
+static void gst_native_surface_init(JNIEnv * env, jobject thiz, jobject surface) {
   (void)thiz;
+
   CustomData *data = get_custom_data();
   if (!data)
     return;
-  ANativeWindow *new_native_window = ANativeWindow_fromSurface (env, surface);
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Received surface %p (native window %p)", (void *) surface, (void *) new_native_window);
+
+  ANativeWindow *new_native_window = ANativeWindow_fromSurface(env, surface);
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Received surface %p (native window %p)", (void *) surface, (void *) new_native_window);
 
   if (data->native_window) {
-    ANativeWindow_release (data->native_window);
+    ANativeWindow_release(data->native_window);
     if (data->native_window == new_native_window) {
-      __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer",
             "New native window is the same as the previous one %p", (void *) data->native_window);
       if (data->sink) {
-        gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->sink));
-        gst_video_overlay_expose (GST_VIDEO_OVERLAY (data->sink));
+        gst_video_overlay_expose(GST_VIDEO_OVERLAY(data->sink));
+        gst_video_overlay_expose(GST_VIDEO_OVERLAY(data->sink));
       }
       return;
     } else {
-      __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer",
            "Released previous native window %p", (void *)data->native_window);
       data->initialized = FALSE;
     }
   }
   data->native_window = new_native_window;
 
-  check_initialization_complete (data);
+  check_initialization_complete(data);
 }
 
-static void
-gst_native_surface_finalize (JNIEnv * env, jobject thiz)
-{
+static void gst_native_surface_finalize(JNIEnv * env, jobject thiz) {
   (void)env;
   (void)thiz;
+
   CustomData *data = get_custom_data();
   if (!data)
     return;
 
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer",
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer",
        "Releasing Native Window %p", (void *) data->native_window);
 
   if (data->sink) {
-    gst_video_overlay_set_window_handle (GST_VIDEO_OVERLAY (data->sink),
-        (guintptr) NULL);
-    gst_element_set_state (data->pipeline, GST_STATE_READY);
+    gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(data->sink), (guintptr) NULL);
+    gst_element_set_state(data->pipeline, GST_STATE_READY);
   }
 
-  ANativeWindow_release (data->native_window);
+  ANativeWindow_release(data->native_window);
   data->native_window = NULL;
   data->initialized = FALSE;
 }
@@ -510,9 +458,8 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_pushFrameNative(
         jbyteArray buffer,
         jstring caps) {
 
-
-    //__android_log_print (ANDROID_LOG_INFO, "h265gstreamer","Enqueue frame data");
     (void)thiz;
+
     CustomData *data = get_custom_data();
     if (!data)
         return;
@@ -551,13 +498,13 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_pushFrameNative(
     gst_queue_array_push_tail(data->queue, sample);
     data->num_buffers++;
 
-//    GstAppSrc *appsrc = GST_APP_SRC(data->appsrc);
-//    if (!appsrc) {
-//        g_print("Unable to get app source");
-//        return;
-//    }
-//
-//    gst_app_src_push_sample(appsrc, sample);
+    GstAppSrc *appsrc = GST_APP_SRC(data->appsrc);
+    if (!appsrc) {
+        g_print("Unable to get app source");
+        return;
+    }
+
+    gst_app_src_push_sample(appsrc, sample);
 }
 
 /* List of implemented native methods */
@@ -571,18 +518,17 @@ static JNINativeMethod native_methods[] = {
 };
 
 /* Library initializer */
-jint
-JNI_OnLoad (JavaVM * vm, void *reserved)
+jint JNI_OnLoad (JavaVM * vm, void *reserved)
 {
   JNIEnv *env = NULL;
   (void)reserved;
 
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "JNI_OnLoad");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "JNI_OnLoad");
 
   GError *err;
   gboolean init_succeeded = gst_init_check(NULL, NULL, &err);
   if (!init_succeeded) {
-      __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "Error initializing gstreamer: %s\n", err->message);
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Error initializing gstreamer: %s\n", err->message);
       return 0;
   }
 
@@ -603,7 +549,7 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
 
 
   char *version_utf8 = gst_version_string();
-  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer", "GST Version: %s", version_utf8);
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "GST Version: %s", version_utf8);
 
   java_vm = vm;
   // in the other example the plugins are setup gst_init_static_plugins, since that's no longer autogenerated we'll register them here
@@ -615,35 +561,31 @@ JNI_OnLoad (JavaVM * vm, void *reserved)
   GST_PLUGIN_STATIC_REGISTER(autodetect);
 
   if ((*vm)->GetEnv (vm, (void **) &env, JNI_VERSION_1_4) != JNI_OK) {
-    __android_log_print (ANDROID_LOG_ERROR, "h265gstreamer",
-        "Could not retrieve JNIEnv");
+    __android_log_print(ANDROID_LOG_ERROR, "h265gstreamer", "Could not retrieve JNIEnv");
     return 0;
   }
 
-  jclass klass = (*env)->FindClass (env,
-      "com/auterion/sambaza/JniBinding$Companion");
-  (*env)->RegisterNatives (env, klass, native_methods,
-      G_N_ELEMENTS (native_methods));
+  jclass klass = (*env)->FindClass(env, "com/auterion/sambaza/JniBinding$Companion");
 
-  jclass klass2 = (*env)->FindClass (env,"com/auterion/sambaza/JniBinding");
+  //Manual registration linking JNI methods to c implementations
+  (*env)->RegisterNatives(env, klass, native_methods, G_N_ELEMENTS (native_methods));
 
-  custom_data_field_id =
-            (*env)->GetStaticFieldID (env, klass2, "nativeCustomData", "J");
-  set_message_method_id =
-            (*env)->GetStaticMethodID (env, klass2, "setMessage", "(Ljava/lang/String;)V");
-  on_gstreamer_initialized_method_id =
-            (*env)->GetStaticMethodID (env, klass2, "onGStreamerInitialized", "()V");
+  jclass klass2 = (*env)->FindClass(env,"com/auterion/sambaza/JniBinding");
 
-    if (!custom_data_field_id || !set_message_method_id
-        || !on_gstreamer_initialized_method_id) {
-        /* We emit this message through the Android log instead of the GStreamer log because the later
-         * has not been initialized yet.
-         */
-        __android_log_print (ANDROID_LOG_ERROR, "h265gstreamer",
-                             "The calling class does not implement all necessary interface methods");
-    }
+  //Lookup of IDs in JNI to link c calls to JNI methods/fields
+  custom_data_field_id = (*env)->GetStaticFieldID(env, klass2, "nativeCustomData", "J");
+  set_message_method_id = (*env)->GetStaticMethodID(env, klass2, "setMessage", "(Ljava/lang/String;)V");
+  on_gstreamer_initialized_method_id = (*env)->GetStaticMethodID(env, klass2, "onGStreamerInitialized", "()V");
 
-  pthread_key_create (&current_jni_env, detach_current_thread);
+  if (!custom_data_field_id || !set_message_method_id || !on_gstreamer_initialized_method_id) {
+      /* We emit this message through the Android log instead of the GStreamer log because the later
+       * has not been initialized yet.
+       */
+      __android_log_print(ANDROID_LOG_ERROR, "h265gstreamer", "The calling class does not implement all necessary interface methods");
+  }
+
+  //Creates a thread key, stored in global current_jni_env, with a destructor detach_current_thread
+  pthread_key_create(&current_jni_env, detach_current_thread);
 
   return JNI_VERSION_1_4;
 }
