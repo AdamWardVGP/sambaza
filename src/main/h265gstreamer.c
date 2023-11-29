@@ -312,13 +312,13 @@ static void gstAndroidLog(GstDebugCategory * category,
                    GObject          * object,
                    GstDebugMessage  * message,
                    gpointer           user_data) {
-    (void)category;
-    (void)level;
     (void)line;
     (void)object;
     (void)user_data;
+    if (level <= gst_debug_category_get_threshold(category)) {
         __android_log_print(ANDROID_LOG_ERROR, "SambasaDebug", "%s,%s: %s",
                             file, function, gst_debug_message_get(message));
+    }
 }
 
 /* Instruct the native code to create its internal data structure, pipeline and thread */
@@ -373,8 +373,10 @@ static void gst_native_play(JNIEnv * env, jobject thiz) {
   (void)env;
 
   CustomData *data = get_custom_data();
-  if (!data)
-    return;
+    if (!data){
+        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort play")
+        return;
+    }
 
   __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Setting state to PLAYING");
   gst_element_set_state(data->pipeline, GST_STATE_PLAYING);
@@ -386,8 +388,10 @@ static void gst_native_pause(JNIEnv * env, jobject thiz) {
   (void)thiz;
 
   CustomData *data = get_custom_data();
-  if (!data)
-    return;
+    if (!data){
+        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort pause")
+        return;
+    }
 
   __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Setting state to PAUSED");
   gst_element_set_state(data->pipeline, GST_STATE_PAUSED);
@@ -396,9 +400,14 @@ static void gst_native_pause(JNIEnv * env, jobject thiz) {
 static void gst_native_surface_init(JNIEnv * env, jobject thiz, jobject surface) {
   (void)thiz;
 
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "native surface init")
+
   CustomData *data = get_custom_data();
-  if (!data)
-    return;
+  if (!data){
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "no custom data, abort")
+      return;
+  }
+
 
   ANativeWindow *new_native_window = ANativeWindow_fromSurface(env, surface);
   __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Received surface %p (native window %p)", (void *) surface, (void *) new_native_window);
