@@ -49,7 +49,7 @@ typedef struct _CustomData
   guint max_buffers;
   GstQueueArray *queue;
 
-  gchar *file_path;
+//  gchar *file_path;
 
 } CustomData;
 
@@ -117,7 +117,7 @@ static void set_custom_data(const CustomData * data) {
 
 /* Retrieve errors from the bus and show them on the UI */
 static void error_cb(GstBus * bus, GstMessage * msg, CustomData * data) {
-    (void)bus;
+  (void)bus;
 
   GError *err;
   gchar *debug_info;
@@ -214,7 +214,6 @@ static void * app_function(void *userdata) {
 
   if (!data->pipeline || !data->appsrc_queue || !data->appsrc || !data->parser || !data->decoder || !data->converter || !data->sink) {
       gchar *message = g_strdup_printf("Not all elements could be created.");
-      set_ui_message(message, data);
       g_free(message);
       return NULL;
   }
@@ -256,7 +255,6 @@ static void * app_function(void *userdata) {
       gst_object_unref(data->pipeline);
 
       gchar *message = g_strdup_printf("Elements could not be linked.");
-      set_ui_message(message, data);
       g_free(message);
 
       return NULL;
@@ -334,15 +332,12 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_gstNativeInit(
     jobject thiz,
     jstring filepath) {
 
-    CustomData *data = g_new0CustomData, 1);
+    CustomData *data = g_new0(CustomData, 1);
     set_custom_data(data);
 
-    data->file_path =(gchar *)(*env)->GetStringUTFChars(env, filepath, 0);
+//    data->file_path =(gchar *)(*env)->GetStringUTFChars(env, filepath, 0);
     (*env)->ReleaseStringUTFChars(env, filepath, data->file_path);
-    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Using provided filepath %s", data->file_path);
-
-    GST_DEBUG_CATEGORY_INIT(debug_category, "h265gstreamer", 0, "Android Gstreamer");
-    gst_debug_set_threshold_for_name("h265gstreamer", GST_LEVEL_DEBUG);
+//    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Using provided filepath %s", data->file_path);
     __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Created CustomData at %p", (void *) data);
 
     data->jniCompanion = (*env)->NewGlobalRef(env, thiz);
