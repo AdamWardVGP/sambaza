@@ -69,5 +69,5 @@ abstract class RtspProxyImpl(port: Int = 0) : RtspProxy, CoroutineScope {
         return JniApi.getPort(skywayServerHandle)
     }
 
-    protected abstract fun addStream(streamInfo: StreamInfo)
+    public abstract fun addStream(streamInfo: StreamInfo)
 }
