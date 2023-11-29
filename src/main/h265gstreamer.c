@@ -44,11 +44,6 @@ typedef struct _CustomData
   gboolean initialized;         /* To avoid informing the UI multiple times about the initialization */
   ANativeWindow *native_window; /* The Android native window where video will be rendered */
 
-  /* appsrc buffers */
-  guint num_buffers;
-  guint max_buffers;
-  GstQueueArray *queue;
-
 //  gchar *file_path;
 
 } CustomData;
@@ -484,15 +479,6 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_pushFrameNative(
     gst_sample_unref(sample);
     (*env)->ReleaseByteArrayElements(env, buffer, buffer_ptr, JNI_ABORT);
     (*env)->ReleaseStringUTFChars(env, caps, native_caps);
-
-    while (data->max_buffers > 0 && data->num_buffers >= data->max_buffers) {
-        g_print("Dropping oldest sample\n");
-        gst_queue_array_pop_head(data->queue);
-        data->num_buffers--;
-    }
-
-    gst_queue_array_push_tail(data->queue, sample);
-    data->num_buffers++;
 
     GstAppSrc *appsrc = GST_APP_SRC(data->appsrc);
     if (!appsrc) {
