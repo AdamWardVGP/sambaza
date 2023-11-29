@@ -336,7 +336,7 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_gstNativeInit(
     set_custom_data(data);
 
 //    data->file_path =(gchar *)(*env)->GetStringUTFChars(env, filepath, 0);
-    (*env)->ReleaseStringUTFChars(env, filepath, data->file_path);
+//    (*env)->ReleaseStringUTFChars(env, filepath, data->file_path);
 //    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Using provided filepath %s", data->file_path);
     __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Created CustomData at %p", (void *) data);
 
