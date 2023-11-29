@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>
+#include <android/log.h>
 
 #include "appsink_proxy.h"
 #include "gstbuffer_to_sink.h"
