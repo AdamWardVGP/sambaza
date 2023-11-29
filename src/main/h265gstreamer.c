@@ -42,6 +42,8 @@ typedef struct _CustomData
   GstElement *pipeline;         /* The running pipeline */
   GstElement *appsrc, *appsrc_queue, *parser, *decoder, *converter,  *sink; /* Elements of the pipeline */
 
+  GstElement *video_sink_overlay; /* it might be that autovideosink is a bin, and video_sink_overlay is an internal component of it.
+
   GMainContext *context;        /* GLib context used to run the main loop */
   GMainLoop *main_loop;         /* GLib main loop */
   gboolean initialized;         /* To avoid informing the UI multiple times about the initialization */
@@ -261,6 +263,14 @@ static void * app_function(void *userdata) {
   /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
   gst_element_set_state(data->pipeline, GST_STATE_READY);
 
+  data->video_sink_overlay = gst_bin_get_by_interface(GST_BIN(data->pipeline), GST_TYPE_VIDEO_OVERLAY);
+  if (!data->video_sink_overlay) {
+      GST_ERROR ("Could not retrieve video sink");
+      return NULL;
+  } else {
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","video_sink_overlay %p", (void *) data->video_sink_overlay);
+  }
+
   /* Instruct the bus to emit signals for each received message. We then hook those signals up to our
    * own methods `error_cb` and `state_changed_cb` */
   bus = gst_element_get_bus(data->pipeline);
@@ -417,9 +427,11 @@ static void gst_native_surface_init(JNIEnv * env, jobject thiz, jobject surface)
     if (data->native_window == new_native_window) {
       __android_log_print(ANDROID_LOG_INFO, "h265gstreamer",
             "New native window is the same as the previous one %p", (void *) data->native_window);
-      if (data->sink) {
-        gst_video_overlay_expose(GST_VIDEO_OVERLAY(data->sink));
-        gst_video_overlay_expose(GST_VIDEO_OVERLAY(data->sink));
+      if (data->video_sink_overlay) {
+        gst_video_overlay_expose(GST_VIDEO_OVERLAY(data->video_sink_overlay));
+        gst_video_overlay_expose(GST_VIDEO_OVERLAY(data->video_sink_overlay));
+      } else {
+          __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "surface init called without an overlay setup");
       }
       return;
     } else {
