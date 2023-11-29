@@ -10,6 +10,9 @@
 #include <gst/base/gstqueuearray.h>
 #include <gst/app/gstappsrc.h>
 
+GST_DEBUG_CATEGORY_STATIC (debug_category);
+#define GST_CAT_DEFAULT debug_category
+
 /*
  * These macros provide a way to store the native pointer to CustomData, which might be 32 or 64 bits, into
  * a jlong, which is always 64 bits, without warnings.
@@ -335,6 +338,9 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_gstNativeInit(
 //    (*env)->ReleaseStringUTFChars(env, filepath, data->file_path);
 //    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Using provided filepath %s", data->file_path);
     __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Created CustomData at %p", (void *) data);
+
+    GST_DEBUG_CATEGORY_INIT(debug_category, "h265gstreamer", 0, "Android Gstreamer");
+    gst_debug_set_threshold_for_name("h265gstreamer", GST_LEVEL_DEBUG);
 
     data->jniCompanion = (*env)->NewGlobalRef(env, thiz);
     __android_log_print(ANDROID_LOG_INFO, "h265gstreamer", "Created GlobalRef for app object at %p", data->jniCompanion);
