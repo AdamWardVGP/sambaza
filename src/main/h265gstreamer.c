@@ -331,6 +331,7 @@ Java_com_auterion_sambaza_JniBinding_00024Companion_gstNativeInit(
     JNIEnv *env,
     jobject thiz,
     jstring filepath) {
+    (void)filepath;
 
     CustomData *data = g_new0(CustomData, 1);
     set_custom_data(data);
