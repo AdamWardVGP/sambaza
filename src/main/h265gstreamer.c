@@ -42,7 +42,7 @@ typedef struct _CustomData
   GstElement *pipeline;         /* The running pipeline */
   GstElement *appsrc, *appsrc_queue, *parser, *decoder, *converter,  *sink; /* Elements of the pipeline */
 
-  GstElement *video_sink_overlay; /* it might be that autovideosink is a bin, and video_sink_overlay is an internal component of it.
+  GstElement *video_sink_overlay; /* it might be that autovideosink is a bin, and video_sink_overlay is an internal component of it.  */
 
   GMainContext *context;        /* GLib context used to run the main loop */
   GMainLoop *main_loop;         /* GLib main loop */
