@@ -44,6 +44,9 @@ typedef struct _CustomData
 
   GstElement *video_sink_overlay; /* it might be that autovideosink is a bin, and video_sink_overlay is an internal component of it.  */
 
+  GstElement *pipeline2;         /* A second test pipeline */
+  GstElement *video_sink2; /* A second video sink for testing */
+
   GMainContext *context;        /* GLib context used to run the main loop */
   GMainLoop *main_loop;         /* GLib main loop */
   gboolean initialized;         /* To avoid informing the UI multiple times about the initialization */
@@ -240,26 +243,23 @@ static void * app_function(void *userdata) {
   gst_element_set_state(data->pipeline, GST_STATE_READY);
 
 
+    GError *error = NULL;
 
     /* Build pipeline */
-    data->pipeline2 = gst_parse_launch ("videotestsrc ! warptv ! videoconvert ! autovideosink",
-                              &error);
+    data->pipeline2 = gst_parse_launch ("videotestsrc ! warptv ! videoconvert ! autovideosink", &error);
     if (error) {
-        gchar *message =
-                g_strdup_printf ("Unable to build pipeline: %s", error->message);
+        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Unable to build pipeline: %s", error->message);
         g_clear_error (&error);
-        set_ui_message (message, data);
-        g_free (message);
         return NULL;
     }
 
     /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
     gst_element_set_state (data->pipeline2, GST_STATE_READY);
 
-    data->video_sink =
+    data->video_sink2 =
             gst_bin_get_by_interface (GST_BIN (data->pipeline2),
                                       GST_TYPE_VIDEO_OVERLAY);
-    if (!data->video_sink) {
+    if (!data->video_sink2) {
         GST_ERROR ("Could not retrieve video sink from pipeline 2");
         return NULL;
     }
