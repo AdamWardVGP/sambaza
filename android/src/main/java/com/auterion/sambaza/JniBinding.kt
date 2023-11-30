@@ -16,9 +16,8 @@ class JniBinding {
     /** Native code will use this to keep internal state */
     private val nativeCustomData: Long = 0
 
-    /** Initialize native code. Application is responsible to call this early and provide
-     * file path to build pipeline */
-    public external fun gstNativeInit(filepath: String)
+    /** Initialize native code. Application is responsible to call this early to build pipeline */
+    public external fun gstNativeInit()
 
     /** Destroy pipeline and shutdown native code */
     public external fun nativeFinalize()
