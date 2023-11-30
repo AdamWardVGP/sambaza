@@ -215,7 +215,7 @@ static void * app_function(void *userdata) {
   __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","autovideosink %p", (void *) data->sink);
 
   //|| !data->appsrc_queue || || !data->parser || !data->decoder ||
-  if (!data->pipeline !data->appsrc ||  !data->converter || !data->sink) {
+  if (!data->pipeline || !data->appsrc ||  !data->converter || !data->sink) {
       gchar *message = g_strdup_printf("Not all elements could be created.");
       g_free(message);
       return NULL;
