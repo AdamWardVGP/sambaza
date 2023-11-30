@@ -44,9 +44,6 @@ typedef struct _CustomData
 
   GstElement *video_sink_overlay; /* it might be that autovideosink is a bin, and video_sink_overlay is an internal component of it.  */
 
-  GstElement *pipeline2;         /* A second test pipeline */
-  GstElement *video_sink2; /* A second video sink for testing */
-
   GMainContext *context;        /* GLib context used to run the main loop */
   GMainLoop *main_loop;         /* GLib main loop */
   gboolean initialized;         /* To avoid informing the UI multiple times about the initialization */
@@ -178,6 +175,8 @@ static void * app_function(void *userdata) {
   data->context = g_main_context_new();
   g_main_context_push_thread_default(data->context);
 
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","----Begin pipeline setup----");
+
   /* Create the empty pipeline */
   data->pipeline = gst_pipeline_new("test-pipeline");
   __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","pipeline %p", (void *) data->pipeline);
@@ -192,18 +191,18 @@ static void * app_function(void *userdata) {
 //  data->filesrc = gst_element_factory_make ("filesrc", "1-filesrc");
 //  __android_log_print (ANDROID_LOG_INFO, "h265gstreamer","filesrc %p", (void *) data->filesrc);
 
-  data->appsrc_queue = gst_element_factory_make("queue", "1.5-queue");
-  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","queue %p", (void *) data->appsrc_queue);
+//  data->appsrc_queue = gst_element_factory_make("queue", "1.5-queue");
+//  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","queue %p", (void *) data->appsrc_queue);
 
   //Plugin – videoparsersbad
   //Package – GStreamer Bad Plug-ins
-  data->parser = gst_element_factory_make("h265parse", "2-parser");
-  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","h265parse %p", (void *) data->parser);
+//  data->parser = gst_element_factory_make("h265parse", "2-parser");
+//  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","h265parse %p", (void *) data->parser);
 
   //Plugin – libav
   //Package – GStreamer FFMPEG Plug-ins
-  data->decoder = gst_element_factory_make("avdec_h265", "3-decoder");
-  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","avdec_h265 %p", (void *) data->decoder);
+//  data->decoder = gst_element_factory_make("avdec_h265", "3-decoder");
+//  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","avdec_h265 %p", (void *) data->decoder);
 
   //Plugin – videoconvertscale
   //Package – GStreamer Base Plug-ins
@@ -215,22 +214,28 @@ static void * app_function(void *userdata) {
   data->sink = gst_element_factory_make("autovideosink", "5-sink");
   __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","autovideosink %p", (void *) data->sink);
 
-  if (!data->pipeline || !data->appsrc_queue || !data->appsrc || !data->parser || !data->decoder || !data->converter || !data->sink) {
+  //|| !data->appsrc_queue || || !data->parser || !data->decoder ||
+  if (!data->pipeline !data->appsrc ||  !data->converter || !data->sink) {
       gchar *message = g_strdup_printf("Not all elements could be created.");
       g_free(message);
       return NULL;
   }
 
-  g_object_set(G_OBJECT(data->appsrc),
-                "do-timestamp", TRUE,
-                "is-live", TRUE,
-                "format", GST_FORMAT_TIME,
-                "max-buffers", 5,
-                NULL);
+//  g_object_set(G_OBJECT(data->appsrc),
+//                "do-timestamp", TRUE,
+//                "is-live", TRUE,
+//                "format", GST_FORMAT_TIME,
+//                "max-buffers", 5,
+//                NULL);
 
   /* Build the pipeline. */
-  gst_bin_add_many(GST_BIN(data->pipeline), data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL);
-  if (!gst_element_link_many(data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL)) {
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","----adding to bin----");
+  //gst_bin_add_many(GST_BIN(data->pipeline), data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL);
+  gst_bin_add_many(GST_BIN(data->pipeline), data->appsrc, data->converter, data->sink, NULL);
+
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","----linking----");
+  //gst_element_link_many(data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL)
+  if (!gst_element_link_many(data->appsrc, data->converter, data->sink, NULL)) {
       gst_object_unref(data->pipeline);
 
       gchar *message = g_strdup_printf("Elements could not be linked.");
@@ -240,44 +245,20 @@ static void * app_function(void *userdata) {
   }
 
   /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","----pipeline linked, calling set ready-----");
   gst_element_set_state(data->pipeline, GST_STATE_READY);
 
-
-    GError *error = NULL;
-
-    /* Build pipeline */
-    //very strange using 'videotestsrc' we get an error:
-    //no element "videotestsrc"
-    //videotestsrc is in GStreamer Base Plug-ins
-    data->pipeline2 = gst_parse_launch ("videoconvert ! autovideosink", &error);
-    if (error) {
-        __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Unable to build pipeline: %s", error->message);
-        g_clear_error (&error);
-        return NULL;
-    }
-
-    /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
-    gst_element_set_state (data->pipeline2, GST_STATE_READY);
-
-    data->video_sink2 =
-            gst_bin_get_by_interface (GST_BIN (data->pipeline2),
-                                      GST_TYPE_VIDEO_OVERLAY);
-
-    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","*** videoOverlay is %lu", GST_TYPE_VIDEO_OVERLAY);
-    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","*** direct call is %lu", gst_video_overlay_get_type());
-
-    if (!data->video_sink2) {
-        GST_ERROR ("Could not retrieve video sink from pipeline 2");
-        return NULL;
-    }
-
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","----pipeline set ready, checking elements-----");
   data->video_sink_overlay = gst_bin_get_by_interface(GST_BIN(data->pipeline), GST_TYPE_VIDEO_OVERLAY);
   if (!data->video_sink_overlay) {
       GST_ERROR ("Could not retrieve video sink");
       return NULL;
   } else {
-      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","video_sink_overlay %p", (void *) data->video_sink_overlay);
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","got sink element %p", (void *) data->sink);
+      __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","video_sink_overlay is %p", (void *) data->video_sink_overlay);
   }
+
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","----converting bus msg to signal-----");
 
   /* Instruct the bus to emit signals for each received message. We then hook those signals up to our
    * own methods `error_cb` and `state_changed_cb` */
