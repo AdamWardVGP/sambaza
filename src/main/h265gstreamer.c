@@ -246,7 +246,10 @@ static void * app_function(void *userdata) {
     GError *error = NULL;
 
     /* Build pipeline */
-    data->pipeline2 = gst_parse_launch ("videotestsrc ! warptv ! videoconvert ! autovideosink", &error);
+    //very strange using 'videotestsrc' we get an error:
+    //no element "videotestsrc"
+    //videotestsrc is in GStreamer Base Plug-ins
+    data->pipeline2 = gst_parse_launch ("videoconvert ! autovideosink", &error);
     if (error) {
         __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","Unable to build pipeline: %s", error->message);
         g_clear_error (&error);
