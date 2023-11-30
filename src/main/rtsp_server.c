@@ -9,6 +9,8 @@
 #include "gstbuffer_to_sink.h"
 #include "rtspsrc_to_sink.h"
 
+#include <android/log.h>
+
 static void closed_handler(GstRTSPClient *client, gpointer user_data);
 
 static void
