@@ -218,36 +218,12 @@ static void * app_function(void *userdata) {
       return NULL;
   }
 
-//  g_object_set(G_OBJECT (data->filesrc),
-//               "location", data->file_path,
-//               NULL);
-
   g_object_set(G_OBJECT(data->appsrc),
                 "do-timestamp", TRUE,
                 "is-live", TRUE,
                 "format", GST_FORMAT_TIME,
                 "max-buffers", 5,
                 NULL);
-
-  // According to GST docs we don't need to set caps when calling gst_app_src_push_sample
-  // https://gstreamer.freedesktop.org/documentation/applib/gstappsrc.html?gi-language=c
-  // But the logs complain "gst_app_src_push_sample_internal: received sample without caps"
-  //
-  //alignment: au "each output buffer contains the NALs for a whole picture."
-  // no idea what DJI is giving us...
-  //https://gstreamer-devel.narkive.com/2i5BzQYy/what-is-the-alignment-capability-in-video-x-h264
-  //
-  //
-  // Could be a capsfilter issue?
-  // https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp/issues/431
-  // "stream-format", G_TYPE_STRING, "hvc1", //or hev1 or byte-stream
-  //    GstCaps *caps = gst_caps_new_simple("video/x-h265",
-  //                               "stream-format", G_TYPE_STRING, "byte-stream",
-  //                               "alignment", G_TYPE_STRING, "au",
-  //                               NULL);
-  //
-  //    g_object_set(G_OBJECT (data->appsrc), "caps",  caps,
-  //                 NULL);
 
   /* Build the pipeline. */
   gst_bin_add_many(GST_BIN(data->pipeline), data->appsrc, data->appsrc_queue, data->parser, data->decoder, data->converter, data->sink, NULL);
@@ -262,6 +238,31 @@ static void * app_function(void *userdata) {
 
   /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
   gst_element_set_state(data->pipeline, GST_STATE_READY);
+
+
+
+    /* Build pipeline */
+    data->pipeline2 = gst_parse_launch ("videotestsrc ! warptv ! videoconvert ! autovideosink",
+                              &error);
+    if (error) {
+        gchar *message =
+                g_strdup_printf ("Unable to build pipeline: %s", error->message);
+        g_clear_error (&error);
+        set_ui_message (message, data);
+        g_free (message);
+        return NULL;
+    }
+
+    /* Set the pipeline to READY, so it can already accept a window handle, if we have one */
+    gst_element_set_state (data->pipeline2, GST_STATE_READY);
+
+    data->video_sink =
+            gst_bin_get_by_interface (GST_BIN (data->pipeline2),
+                                      GST_TYPE_VIDEO_OVERLAY);
+    if (!data->video_sink) {
+        GST_ERROR ("Could not retrieve video sink from pipeline 2");
+        return NULL;
+    }
 
   data->video_sink_overlay = gst_bin_get_by_interface(GST_BIN(data->pipeline), GST_TYPE_VIDEO_OVERLAY);
   if (!data->video_sink_overlay) {
