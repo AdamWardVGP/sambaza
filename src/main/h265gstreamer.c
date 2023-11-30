@@ -263,8 +263,8 @@ static void * app_function(void *userdata) {
             gst_bin_get_by_interface (GST_BIN (data->pipeline2),
                                       GST_TYPE_VIDEO_OVERLAY);
 
-    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","*** videoOverlay is %s", GST_TYPE_VIDEO_OVERLAY);
-    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","*** direct call is %s", gst_video_overlay_get_type());
+    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","*** videoOverlay is %lu", GST_TYPE_VIDEO_OVERLAY);
+    __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","*** direct call is %lu", gst_video_overlay_get_type());
 
     if (!data->video_sink2) {
         GST_ERROR ("Could not retrieve video sink from pipeline 2");
