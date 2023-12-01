@@ -33,6 +33,7 @@ GST_PLUGIN_STATIC_DECLARE(videoparsersbad);
 GST_PLUGIN_STATIC_DECLARE(libav);
 GST_PLUGIN_STATIC_DECLARE(videoconvertscale);
 GST_PLUGIN_STATIC_DECLARE(autodetect);
+GST_PLUGIN_STATIC_DECLARE(opengl);
 
 
 /* Structure to contain all our information, so we can pass it to callbacks */
@@ -204,10 +205,16 @@ static void * app_function(void *userdata) {
   data->converter = gst_element_factory_make("videoconvert", "4-converter");
   __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","videoconvert %p", (void *) data->converter);
 
+  //Element - autovideosink
   //Plugin – autodetect
   //Package – GStreamer Good Plug-ins
-  data->sink = gst_element_factory_make("autovideosink", "5-sink");
-  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","autovideosink %p", (void *) data->sink);
+
+  //Element - glimagesink
+  //Plugin  – opengl
+  //Package – GStreamer Base Plug-ins
+
+  data->sink = gst_element_factory_make("glimagesink", "5-sink");
+  __android_log_print(ANDROID_LOG_INFO, "h265gstreamer","glimagesink %p", (void *) data->sink);
 
   if (!data->pipeline || !data->appsrc || !data->appsrc_queue || !data->parser || !data->decoder || !data->converter || !data->sink) {
       gchar *message = g_strdup_printf("Not all elements could be created.");
@@ -542,6 +549,7 @@ jint JNI_OnLoad (JavaVM * vm, void *reserved)
   GST_PLUGIN_STATIC_REGISTER(libav);
   GST_PLUGIN_STATIC_REGISTER(videoconvertscale);
   GST_PLUGIN_STATIC_REGISTER(autodetect);
+  GST_PLUGIN_STATIC_REGISTER(opengl);
 
   if ((*vm)->GetEnv (vm, (void **) &env, JNI_VERSION_1_4) != JNI_OK) {
     __android_log_print(ANDROID_LOG_ERROR, "h265gstreamer", "Could not retrieve JNIEnv");
