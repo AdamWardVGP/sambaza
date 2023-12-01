@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>
+#include <android/log.h>
 
 #include "appsink_proxy.h"
 #include "gstbuffer_to_sink.h"
@@ -28,10 +29,36 @@ typedef struct _SkywayHandles {
     guint server_handle; // TODO have a collection of handles for each server -> actually we want one server but multiple streams
 } SkywayHandles;
 
+static void gstAndroidLog(GstDebugCategory * category,
+                          GstDebugLevel      level,
+                          const gchar      * file,
+                          const gchar      * function,
+                          gint               line,
+                          GObject          * object,
+                          GstDebugMessage  * message,
+                          gpointer           user_data)
+{
+    (void)line;
+    (void)object;
+    (void)user_data;
+
+    if (level <= gst_debug_category_get_threshold (category))
+    {
+        __android_log_print(ANDROID_LOG_ERROR, "SambasaDebug", "%s,%s: %s",
+                            file, function, gst_debug_message_get(message));
+    }
+}
+
 JNIEXPORT jlong JNICALL
 Java_com_auterion_sambaza_JniApi_00024Companion_initNative(__attribute__ ((unused)) JNIEnv *env,
                                                                __attribute__ ((unused)) jobject thiz) {
-    gst_debug_set_default_threshold(GST_LEVEL_NONE);
+    gst_debug_set_default_threshold(GST_LEVEL_INFO);
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wpedantic"
+
+    gst_debug_add_log_function(gstAndroidLog, NULL, NULL);
+
+    #pragma GCC diagnostic pop
 
     GError *err;
     gboolean init_succeeded = gst_init_check(NULL, NULL, &err);

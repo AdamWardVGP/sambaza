@@ -93,7 +93,7 @@ int skyway_add_rtspsrc_stream(SkywayRtspServer *server, const char *location, co
         return FALSE;
     }
 
-    const char *launch_str = "appsrc do-timestamp=true format=time is-live=true ! queue ! rtph264pay config-interval=-1 name=pay0";
+    const char *launch_str = "appsrc do-timestamp=true format=time is-live=true ! queue ! rtph265pay config-interval=-1 name=pay0";
     GstRTSPMediaFactory *factory = create_factory(SKYWAY_APP_SINK_PROXY(skyway_rtsp_src_to_sink),
                                                   launch_str);
     add_mount_point(server->server, factory, path);
@@ -105,7 +105,7 @@ void skyway_add_pushable_stream(SkywayRtspServer *server, const char *path) {
     SkywayGstBufferToSink *skyway_gst_buffer_to_sink = skyway_gstbuffer_to_sink_new();
     server->src = skyway_gst_buffer_to_sink; // TODO remove later, now support only one pushable stream per server
 
-    const char *launch_str = "appsrc do-timestamp=true format=time is-live=true ! h264parse config-interval=-1 ! queue ! rtph264pay name=pay0";
+    const char *launch_str = "appsrc do-timestamp=true format=time is-live=true ! h265parse config-interval=-1 ! queue ! rtph265pay name=pay0";
     GstRTSPMediaFactory *factory = create_factory(SKYWAY_APP_SINK_PROXY(skyway_gst_buffer_to_sink),
                                                   launch_str);
     add_mount_point(server->server, factory, path);

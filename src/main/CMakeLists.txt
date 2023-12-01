@@ -16,24 +16,24 @@ find_package(PkgConfig REQUIRED)
 
 #message(FATAL_ERROR "${CMAKE_PREFIX_PATH}")
 pkg_check_modules(GST REQUIRED #gstreamer-full-1.0
-    gstreamer-1.0
-    gstreamer-rtsp-1.0
-    gstrtsp
-    gstrtp
-    gstrtpmanager
-    gsttcp
-    gstudp
-    gstcoreelements
-    gstapp
-    gstvideoparsersbad
-    gstreamer-rtsp-server-1.0
-    gstreamer-rtp-1.0
-    gstreamer-sdp-1.0
-    gstreamer-video-1.0
-    gstreamer-app-1.0
-    gstreamer-codecparsers-1.0
-    orc-0.4
-)
+        gstreamer-1.0
+        gstreamer-rtsp-1.0
+        gstrtsp
+        gstrtp
+        gstrtpmanager
+        gsttcp
+        gstudp
+        gstcoreelements
+        gstapp
+        gstvideoparsersbad
+        gstreamer-rtsp-server-1.0
+        gstreamer-rtp-1.0
+        gstreamer-sdp-1.0
+        gstreamer-video-1.0
+        gstreamer-app-1.0
+        gstreamer-codecparsers-1.0
+        orc-0.4
+        )
 
 add_library(sambaza SHARED
         appsink_proxy.c
@@ -50,11 +50,12 @@ add_library(sambaza SHARED
 target_include_directories(sambaza SYSTEM PRIVATE
         ${JNI_INCLUDE_DIRS}
         ${GST_INCLUDE_DIRS}
-)
+        )
 
 target_link_libraries(sambaza
         ${JNI_LIBRARIES}
         ${GST_LINK_LIBRARIES}
+        android
 )
 
 #target_link_libraries(sambaza
