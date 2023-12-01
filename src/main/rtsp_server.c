@@ -9,8 +9,6 @@
 #include "gstbuffer_to_sink.h"
 #include "rtspsrc_to_sink.h"
 
-#include <android/log.h>
-
 static void closed_handler(GstRTSPClient *client, gpointer user_data);
 
 static void
@@ -44,7 +42,6 @@ client_connected_handler(__attribute__ ((unused)) GstRTSPServer *server,
     GstRTSPUrl *client_url = gst_rtsp_connection_get_url(connection);
     const gchar *client_ip = client_url->host;
     guint16 client_port = client_url->port;
-    __android_log_print(ANDROID_LOG_ERROR, "SambasaDebug", "Client connected: %s:%d!\n", client_ip, client_port);
     g_print("Client connected: %s:%d!\n", client_ip, client_port);
 }
 
@@ -65,13 +62,6 @@ static GstRTSPServer *create_rtsp_server(int port) {
     gchar port_str[50];
     sprintf(port_str, "%d", port);
     gst_rtsp_server_set_service(server, port_str);
-
-    //gst_rtsp_server_get_address
-    gchar * address = gst_rtsp_server_get_address(server);
-    //https://gstreamer.freedesktop.org/documentation/gst-rtsp-server/rtsp-server.html?gi-language=c
-    __android_log_print(ANDROID_LOG_ERROR, "SambasaDebug", "GST server at: %s", address);
-    g_free(address);
-
     g_signal_connect(server, "client-connected", G_CALLBACK(client_connected_handler), NULL);
 
     return server;

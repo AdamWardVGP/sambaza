@@ -9,7 +9,7 @@ class PushableProxyImpl(port: Int = 0) :
             throw RuntimeException("PushableProxy currently only supports exactly one stream!")
         }
 
-        println("Adding pushable stream (serving on ${streamInfo.path})") //native src discards everything but the path
+        println("Adding pushable stream (serving on ${streamInfo.path})")
         JniApi.addPushableStream(skywayServerHandle, streamInfo.path)
         wasStreamAdded = true
     }
