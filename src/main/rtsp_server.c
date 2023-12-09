@@ -1,3 +1,33 @@
+/*
+ * Sambaza H265
+ * An RTSP server for H265 video frames
+ *
+ * Sambaza H265 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * Sambaza H265 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Sambaza H265.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * This fork is based on commit [3a46d6c](https://github.com/Auterion/sambaza/commit/3a46d6cca5b7375b3a58b77fcf9a42e468479c55) of Sambaza
+ * - Changes to this file are merely the exchange of h264 plugins for h265parse & h265pay
+ *
+ * Modified Library info:
+ * - Modification Author: [Adam Ward](https://github.com/AdamWardVGP)
+ *
+ * Original library info:
+ * - Base Library: Sambaza
+ * - Original Author: [Jonas Vautherin](https://git.sr.ht/~jonasvautherin/)
+ * - Original License: GNU Lesser General Public License
+ * - Original License Version: v2.1
+ * - Original License URL: https://git.sr.ht/~jonasvautherin/sambaza/tree/main/item/LICENSE
+ */
 #include <gst/gst.h>
 #include <gst/rtsp-server/rtsp-server.h>
 #include <stdio.h>
